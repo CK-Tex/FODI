@@ -70,13 +70,13 @@ class Poly1305_MAC(object):
         self._mac_tag = None
 
         state = VoidPointer()
-        result = _raw_poly1305.poly1305_init(state.address_of(),
-                                             c_uint8_ptr(r),
-                                             c_size_t(len(r)),
-                                             c_uint8_ptr(s),
-                                             c_size_t(len(s))
-                                             )
-        if result:
+        if result := _raw_poly1305.poly1305_init(
+            state.address_of(),
+            c_uint8_ptr(r),
+            c_size_t(len(r)),
+            c_uint8_ptr(s),
+            c_size_t(len(s)),
+        ):
             raise ValueError("Error %d while instantiating Poly1305" % result)
         self._state = SmartPointer(state.get(),
                                    _raw_poly1305.poly1305_destroy)
@@ -93,10 +93,9 @@ class Poly1305_MAC(object):
         if self._mac_tag:
             raise TypeError("You can only call 'digest' or 'hexdigest' on this object")
 
-        result = _raw_poly1305.poly1305_update(self._state.get(),
-                                               c_uint8_ptr(data),
-                                               c_size_t(len(data)))
-        if result:
+        if result := _raw_poly1305.poly1305_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while hashing Poly1305 data" % result)
         return self
 
@@ -114,12 +113,11 @@ class Poly1305_MAC(object):
 
         if self._mac_tag:
             return self._mac_tag
-        
+
         bfr = create_string_buffer(16)
-        result = _raw_poly1305.poly1305_digest(self._state.get(),
-                                               bfr,
-                                               c_size_t(len(bfr)))
-        if result:
+        if result := _raw_poly1305.poly1305_digest(
+            self._state.get(), bfr, c_size_t(len(bfr))
+        ):
             raise ValueError("Error %d while creating Poly1305 digest" % result)
 
         self._mac_tag = get_raw_buffer(bfr)
@@ -206,12 +204,12 @@ def new(**kwargs):
 
     nonce = kwargs.pop("nonce", None)
     data = kwargs.pop("data", None)
-    
+
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     r, s, nonce = cipher._derive_Poly1305_key_pair(cipher_key, nonce)
-    
+
     new_mac = Poly1305_MAC(r, s, data)
     new_mac.nonce = _copy_bytes(None, None, nonce)  # nonce may still be just a memoryview
     return new_mac

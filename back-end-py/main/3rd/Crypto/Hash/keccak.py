@@ -68,10 +68,9 @@ class Keccak_Hash(object):
         self._digest_done = False
 
         state = VoidPointer()
-        result = _raw_keccak_lib.keccak_init(state.address_of(),
-                                             c_size_t(self.digest_size * 2),
-                                             0x01)
-        if result:
+        if result := _raw_keccak_lib.keccak_init(
+            state.address_of(), c_size_t(self.digest_size * 2), 0x01
+        ):
             raise ValueError("Error %d while instantiating keccak" % result)
         self._state = SmartPointer(state.get(),
                                    _raw_keccak_lib.keccak_destroy)
@@ -88,10 +87,9 @@ class Keccak_Hash(object):
         if self._digest_done and not self._update_after_digest:
             raise TypeError("You can only call 'digest' or 'hexdigest' on this object")
 
-        result = _raw_keccak_lib.keccak_absorb(self._state.get(),
-                                               c_uint8_ptr(data),
-                                               c_size_t(len(data)))
-        if result:
+        if result := _raw_keccak_lib.keccak_absorb(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while updating keccak" % result)
         return self
 
@@ -105,10 +103,9 @@ class Keccak_Hash(object):
 
         self._digest_done = True
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_keccak_lib.keccak_digest(self._state.get(),
-                                               bfr,
-                                               c_size_t(self.digest_size))
-        if result:
+        if result := _raw_keccak_lib.keccak_digest(
+            self._state.get(), bfr, c_size_t(self.digest_size)
+        ):
             raise ValueError("Error %d while squeezing keccak" % result)
 
         return get_raw_buffer(bfr)
@@ -159,15 +156,14 @@ def new(**kwargs):
         raise TypeError("Only one digest parameter must be provided")
     if (None, None) == (digest_bytes, digest_bits):
         raise TypeError("Digest size (bits, bytes) not provided")
-    if digest_bytes is not None:
-        if digest_bytes not in (28, 32, 48, 64):
-            raise ValueError("'digest_bytes' must be: 28, 32, 48 or 64")
-    else:
+    if digest_bytes is None:
         if digest_bits not in (224, 256, 384, 512):
             raise ValueError("'digest_bytes' must be: 224, 256, 384 or 512")
         digest_bytes = digest_bits // 8
 
+    elif digest_bytes not in (28, 32, 48, 64):
+        raise ValueError("'digest_bytes' must be: 28, 32, 48 or 64")
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     return Keccak_Hash(data, digest_bytes, update_after_digest)

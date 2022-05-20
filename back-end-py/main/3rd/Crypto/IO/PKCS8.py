@@ -169,7 +169,7 @@ def unwrap(p8_private_key, passphrase=None):
             p8_private_key = PBES1.decrypt(p8_private_key, passphrase)
             found = True
         except PbesError as e:
-            error_str = "PBES1[%s]" % str(e)
+            error_str = f"PBES1[{str(e)}]"
         except ValueError:
             error_str = "PBES1[Invalid]"
 
@@ -178,12 +178,12 @@ def unwrap(p8_private_key, passphrase=None):
                 p8_private_key = PBES2.decrypt(p8_private_key, passphrase)
                 found = True
             except PbesError as e:
-                error_str += ",PBES2[%s]" % str(e)
+                error_str += f",PBES2[{str(e)}]"
             except ValueError:
                 error_str += ",PBES2[Invalid]"
 
         if not found:
-            raise ValueError("Error decoding PKCS#8 (%s)" % error_str)
+            raise ValueError(f"Error decoding PKCS#8 ({error_str})")
 
     pk_info = DerSequence().decode(p8_private_key, nr_elements=(2, 3, 4))
     if len(pk_info) == 2 and not passphrase:

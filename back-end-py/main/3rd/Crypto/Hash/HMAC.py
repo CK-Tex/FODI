@@ -105,12 +105,9 @@ class HMAC(object):
     def _pbkdf2_hmac_assist(self, first_digest, iterations):
         """Carry out the expensive inner loop for PBKDF2-HMAC"""
 
-        result = self._digestmod._pbkdf2_hmac_assist(
-                                    self._inner,
-                                    self._outer,
-                                    first_digest,
-                                    iterations)
-        return result
+        return self._digestmod._pbkdf2_hmac_assist(
+            self._inner, self._outer, first_digest, iterations
+        )
 
     def copy(self):
         """Return a copy ("clone") of the HMAC object.

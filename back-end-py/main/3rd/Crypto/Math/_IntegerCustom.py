@@ -94,16 +94,14 @@ class IntegerCustom(IntegerNative):
 
         out = create_string_buffer(max_len)
 
-        error = _raw_montgomery.monty_pow(
-                    out,
-                    base_b,
-                    exp_b,
-                    modulus_b,
-                    c_size_t(max_len),
-                    c_ulonglong(getrandbits(64))
-                    )
-
-        if error:
+        if error := _raw_montgomery.monty_pow(
+            out,
+            base_b,
+            exp_b,
+            modulus_b,
+            c_size_t(max_len),
+            c_ulonglong(getrandbits(64)),
+        ):
             raise ValueError("monty_pow failed with error: %d" % error)
 
         result = bytes_to_long(get_raw_buffer(out))

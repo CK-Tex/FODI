@@ -151,9 +151,7 @@ class Shamir_Tests(TestCase):
             (3,"1c97c8b12fe3fd6d1ee84b4e6161dbfe")
             )
 
-        bin_shares = []
-        for share in shares:
-            bin_shares.append((share[0], unhexlify(b(share[1]))))
+        bin_shares = [(share[0], unhexlify(b(share[1]))) for share in shares]
         result = Shamir.combine(bin_shares)
         self.assertEqual(hexlify(result), secret)
 

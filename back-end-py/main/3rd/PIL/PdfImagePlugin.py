@@ -77,7 +77,7 @@ def _save(im, fp, filename, save_all=False):
 
     existing_pdf.start_writing()
     existing_pdf.write_header()
-    existing_pdf.write_comment("created by Pillow {} PDF driver".format(__version__))
+    existing_pdf.write_comment(f"created by Pillow {__version__} PDF driver")
 
     #
     # pages
@@ -101,7 +101,7 @@ def _save(im, fp, filename, save_all=False):
                 # It is a single frame image
                 pass
         numberOfPages += im_numberOfPages
-        for i in range(im_numberOfPages):
+        for _ in range(im_numberOfPages):
             image_refs.append(existing_pdf.next_object_id(0))
             page_refs.append(existing_pdf.next_object_id(0))
             contents_refs.append(existing_pdf.next_object_id(0))
@@ -151,7 +151,7 @@ def _save(im, fp, filename, save_all=False):
                 colorspace = PdfParser.PdfName("DeviceCMYK")
                 procset = "ImageC"  # color images
             else:
-                raise ValueError("cannot save mode %s" % im.mode)
+                raise ValueError(f"cannot save mode {im.mode}")
 
             #
             # image
@@ -173,7 +173,7 @@ def _save(im, fp, filename, save_all=False):
             elif filter == "RunLengthDecode":
                 ImageFile._save(im, op, [("packbits", (0, 0) + im.size, 0, im.mode)])
             else:
-                raise ValueError("unsupported PDF filter (%s)" % filter)
+                raise ValueError(f"unsupported PDF filter ({filter})")
 
             #
             # Get image characteristics

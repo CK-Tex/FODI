@@ -92,12 +92,13 @@ class CfbMode(object):
         """
 
         self._state = VoidPointer()
-        result = raw_cfb_lib.CFB_start_operation(block_cipher.get(),
-                                                 c_uint8_ptr(iv),
-                                                 c_size_t(len(iv)),
-                                                 c_size_t(segment_size),
-                                                 self._state.address_of())
-        if result:
+        if result := raw_cfb_lib.CFB_start_operation(
+            block_cipher.get(),
+            c_uint8_ptr(iv),
+            c_size_t(len(iv)),
+            c_size_t(segment_size),
+            self._state.address_of(),
+        ):
             raise ValueError("Error %d while instantiating the CFB mode" % result)
 
         # Ensure that object disposal of this Python object will (eventually)
@@ -157,30 +158,28 @@ class CfbMode(object):
         if self.encrypt not in self._next:
             raise TypeError("encrypt() cannot be called after decrypt()")
         self._next = [ self.encrypt ]
-        
+
         if output is None:
             ciphertext = create_string_buffer(len(plaintext))
         else:
             ciphertext = output
-            
+
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-        
+
             if len(plaintext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_cfb_lib.CFB_encrypt(self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := raw_cfb_lib.CFB_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             raise ValueError("Error %d while encrypting in CFB mode" % result)
 
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext,  output=None):
         """Decrypt data with the key and the parameters set at initialization.
@@ -218,7 +217,7 @@ class CfbMode(object):
         if self.decrypt not in self._next:
             raise TypeError("decrypt() cannot be called after encrypt()")
         self._next = [ self.decrypt ]
-        
+
         if output is None:
             plaintext = create_string_buffer(len(ciphertext))
         else:
@@ -226,22 +225,20 @@ class CfbMode(object):
 
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-            
+
             if len(ciphertext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
-        
-        result = raw_cfb_lib.CFB_decrypt(self._state.get(),
-                                         c_uint8_ptr(ciphertext),
-                                         c_uint8_ptr(plaintext),
-                                         c_size_t(len(ciphertext)))
-        if result:
+
+        if result := raw_cfb_lib.CFB_decrypt(
+            self._state.get(),
+            c_uint8_ptr(ciphertext),
+            c_uint8_ptr(plaintext),
+            c_size_t(len(ciphertext)),
+        ):
             raise ValueError("Error %d while decrypting in CFB mode" % result)
 
-        if output is None:
-            return get_raw_buffer(plaintext)
-        else:
-            return None
+        return get_raw_buffer(plaintext) if output is None else None
 
 
 def _create_cfb_cipher(factory, **kwargs):
@@ -274,12 +271,11 @@ def _create_cfb_cipher(factory, **kwargs):
 
     if (None, None) == (iv, IV):
         iv = get_random_bytes(factory.block_size)
-    if iv is not None:
-        if IV is not None:
-            raise TypeError("You must either use 'iv' or 'IV', not both")
-    else:
+    if iv is None:
         iv = IV
 
+    elif IV is not None:
+        raise TypeError("You must either use 'iv' or 'IV', not both")
     if len(iv) != factory.block_size:
         raise ValueError("Incorrect IV length (it must be %d bytes long)" %
                 factory.block_size)
@@ -289,5 +285,5 @@ def _create_cfb_cipher(factory, **kwargs):
         raise ValueError("'segment_size' must be positive and multiple of 8 bits")
 
     if kwargs:
-        raise TypeError("Unknown parameters for CFB: %s" % str(kwargs))
+        raise TypeError(f"Unknown parameters for CFB: {str(kwargs)}")
     return CfbMode(cipher_state, iv, segment_size_bytes)

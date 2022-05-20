@@ -42,9 +42,9 @@ class ImagePalette:
         self.palette = palette or bytearray(range(256)) * len(self.mode)
         self.colors = {}
         self.dirty = None
-        if (size == 0 and len(self.mode) * 256 != len(self.palette)) or (
-            size != 0 and size != len(self.palette)
-        ):
+        if (
+            size == 0 and len(self.mode) * 256 != len(self.palette)
+        ) or size not in [0, len(self.palette)]:
             raise ValueError("wrong palette size")
 
     def copy(self):
@@ -68,7 +68,7 @@ class ImagePalette:
         """
         if self.rawmode:
             return self.rawmode, self.palette
-        return self.mode + ";L", self.tobytes()
+        return f"{self.mode};L", self.tobytes()
 
     def tobytes(self):
         """Convert palette to bytes.
@@ -94,24 +94,23 @@ class ImagePalette:
         """
         if self.rawmode:
             raise ValueError("palette contains raw palette data")
-        if isinstance(color, tuple):
-            try:
-                return self.colors[color]
-            except KeyError:
-                # allocate new color slot
-                if isinstance(self.palette, bytes):
-                    self.palette = bytearray(self.palette)
-                index = len(self.colors)
-                if index >= 256:
-                    raise ValueError("cannot allocate more than 256 colors")
-                self.colors[color] = index
-                self.palette[index] = color[0]
-                self.palette[index + 256] = color[1]
-                self.palette[index + 512] = color[2]
-                self.dirty = 1
-                return index
-        else:
+        if not isinstance(color, tuple):
             raise ValueError("unknown color specifier: %r" % color)
+        try:
+            return self.colors[color]
+        except KeyError:
+            # allocate new color slot
+            if isinstance(self.palette, bytes):
+                self.palette = bytearray(self.palette)
+            index = len(self.colors)
+            if index >= 256:
+                raise ValueError("cannot allocate more than 256 colors")
+            self.colors[color] = index
+            self.palette[index] = color[0]
+            self.palette[index + 256] = color[1]
+            self.palette[index + 512] = color[2]
+            self.dirty = 1
+            return index
 
     def save(self, fp):
         """Save palette to text file.
@@ -152,20 +151,13 @@ def raw(rawmode, data):
 
 
 def make_linear_lut(black, white):
-    lut = []
-    if black == 0:
-        for i in range(256):
-            lut.append(white * i // 255)
-    else:
+    if black != 0:
         raise NotImplementedError  # FIXME
-    return lut
+    return [white * i // 255 for i in range(256)]
 
 
 def make_gamma_lut(exp):
-    lut = []
-    for i in range(256):
-        lut.append(int(((i / 255.0) ** exp) * 255.0 + 0.5))
-    return lut
+    return [int(((i / 255.0) ** exp) * 255.0 + 0.5) for i in range(256)]
 
 
 def negative(mode="RGB"):
@@ -177,9 +169,7 @@ def negative(mode="RGB"):
 def random(mode="RGB"):
     from random import randint
 
-    palette = []
-    for i in range(256 * len(mode)):
-        palette.append(randint(0, 255))
+    palette = [randint(0, 255) for _ in range(256 * len(mode))]
     return ImagePalette(mode, palette)
 
 

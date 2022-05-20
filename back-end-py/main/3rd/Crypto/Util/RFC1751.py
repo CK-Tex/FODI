@@ -136,7 +136,7 @@ def english_to_key(s):
             p = p + _extract(skbin, i, 2)
         if (p & 3) != _extract(skbin, 64, 2):
             raise ValueError("Parity error in resulting key")
-        key = key + subkey[0:8]
+        key = key + subkey[:8]
     return key
 
 

@@ -109,14 +109,14 @@ def init_p256():
     p256_order = long_to_bytes(order, 32)
 
     ec_p256_context = VoidPointer()
-    result = _ec_lib.ec_ws_new_context(ec_p256_context.address_of(),
-                                       c_uint8_ptr(p256_modulus),
-                                       c_uint8_ptr(p256_b),
-                                       c_uint8_ptr(p256_order),
-                                       c_size_t(len(p256_modulus)),
-                                       c_ulonglong(getrandbits(64))
-                                       )
-    if result:
+    if result := _ec_lib.ec_ws_new_context(
+        ec_p256_context.address_of(),
+        c_uint8_ptr(p256_modulus),
+        c_uint8_ptr(p256_b),
+        c_uint8_ptr(p256_order),
+        c_size_t(len(p256_modulus)),
+        c_ulonglong(getrandbits(64)),
+    ):
         raise ImportError("Error %d initializing P-256 context" % result)
 
     context = SmartPointer(ec_p256_context.get(), _ec_lib.ec_free_context)
@@ -155,14 +155,14 @@ def init_p384():
     p384_order = long_to_bytes(order, 48)
 
     ec_p384_context = VoidPointer()
-    result = _ec_lib.ec_ws_new_context(ec_p384_context.address_of(),
-                                       c_uint8_ptr(p384_modulus),
-                                       c_uint8_ptr(p384_b),
-                                       c_uint8_ptr(p384_order),
-                                       c_size_t(len(p384_modulus)),
-                                       c_ulonglong(getrandbits(64))
-                                       )
-    if result:
+    if result := _ec_lib.ec_ws_new_context(
+        ec_p384_context.address_of(),
+        c_uint8_ptr(p384_modulus),
+        c_uint8_ptr(p384_b),
+        c_uint8_ptr(p384_order),
+        c_size_t(len(p384_modulus)),
+        c_ulonglong(getrandbits(64)),
+    ):
         raise ImportError("Error %d initializing P-384 context" % result)
 
     context = SmartPointer(ec_p384_context.get(), _ec_lib.ec_free_context)
@@ -201,14 +201,14 @@ def init_p521():
     p521_order = long_to_bytes(order, 66)
 
     ec_p521_context = VoidPointer()
-    result = _ec_lib.ec_ws_new_context(ec_p521_context.address_of(),
-                                       c_uint8_ptr(p521_modulus),
-                                       c_uint8_ptr(p521_b),
-                                       c_uint8_ptr(p521_order),
-                                       c_size_t(len(p521_modulus)),
-                                       c_ulonglong(getrandbits(64))
-                                       )
-    if result:
+    if result := _ec_lib.ec_ws_new_context(
+        ec_p521_context.address_of(),
+        c_uint8_ptr(p521_modulus),
+        c_uint8_ptr(p521_b),
+        c_uint8_ptr(p521_order),
+        c_size_t(len(p521_modulus)),
+        c_ulonglong(getrandbits(64)),
+    ):
         raise ImportError("Error %d initializing P-521 context" % result)
 
     context = SmartPointer(ec_p521_context.get(), _ec_lib.ec_free_context)
@@ -261,7 +261,7 @@ class EccPoint(object):
         try:
             self._curve = _curves[curve]
         except KeyError:
-            raise ValueError("Unknown curve name %s" % str(curve))
+            raise ValueError(f"Unknown curve name {str(curve)}")
         self._curve_name = curve
 
         modulus_bytes = self.size_in_bytes()
@@ -273,12 +273,13 @@ class EccPoint(object):
             raise ValueError("Incorrect coordinate length")
 
         self._point = VoidPointer()
-        result = _ec_lib.ec_ws_new_point(self._point.address_of(),
-                                         c_uint8_ptr(xb),
-                                         c_uint8_ptr(yb),
-                                         c_size_t(modulus_bytes),
-                                         context.get())
-        if result:
+        if result := _ec_lib.ec_ws_new_point(
+            self._point.address_of(),
+            c_uint8_ptr(xb),
+            c_uint8_ptr(yb),
+            c_size_t(modulus_bytes),
+            context.get(),
+        ):
             if result == 15:
                 raise ValueError("The EC point does not belong to the curve")
             raise ValueError("Error %d while instantiating an EC point" % result)
@@ -290,9 +291,9 @@ class EccPoint(object):
 
     def set(self, point):
         self._point = VoidPointer()
-        result = _ec_lib.ec_ws_clone(self._point.address_of(),
-                                     point._point.get())
-        if result:
+        if result := _ec_lib.ec_ws_clone(
+            self._point.address_of(), point._point.get()
+        ):
             raise ValueError("Error %d while cloning an EC point" % result)
 
         self._point = SmartPointer(self._point.get(),
@@ -300,20 +301,18 @@ class EccPoint(object):
         return self
 
     def __eq__(self, point):
-        return 0 == _ec_lib.ec_ws_cmp(self._point.get(), point._point.get())
+        return _ec_lib.ec_ws_cmp(self._point.get(), point._point.get()) == 0
 
     def __neg__(self):
         np = self.copy()
-        result = _ec_lib.ec_ws_neg(np._point.get())
-        if result:
+        if result := _ec_lib.ec_ws_neg(np._point.get()):
             raise ValueError("Error %d while inverting an EC point" % result)
         return np
 
     def copy(self):
         """Return a copy of this point."""
         x, y = self.xy
-        np = EccPoint(x, y, self._curve_name)
-        return np
+        return EccPoint(x, y, self._curve_name)
 
     def is_point_at_infinity(self):
         """``True`` if this is the point-at-infinity."""
@@ -336,11 +335,12 @@ class EccPoint(object):
         modulus_bytes = self.size_in_bytes()
         xb = bytearray(modulus_bytes)
         yb = bytearray(modulus_bytes)
-        result = _ec_lib.ec_ws_get_xy(c_uint8_ptr(xb),
-                                      c_uint8_ptr(yb),
-                                      c_size_t(modulus_bytes),
-                                      self._point.get())
-        if result:
+        if result := _ec_lib.ec_ws_get_xy(
+            c_uint8_ptr(xb),
+            c_uint8_ptr(yb),
+            c_size_t(modulus_bytes),
+            self._point.get(),
+        ):
             raise ValueError("Error %d while encoding an EC point" % result)
 
         return (Integer(bytes_to_long(xb)), Integer(bytes_to_long(yb)))
@@ -360,16 +360,14 @@ class EccPoint(object):
             :class:`EccPoint` : this same object (to enable chaining)
         """
 
-        result = _ec_lib.ec_ws_double(self._point.get())
-        if result:
+        if result := _ec_lib.ec_ws_double(self._point.get()):
             raise ValueError("Error %d while doubling an EC point" % result)
         return self
 
     def __iadd__(self, point):
         """Add a second point to this one"""
 
-        result = _ec_lib.ec_ws_add(self._point.get(), point._point.get())
-        if result:
+        if result := _ec_lib.ec_ws_add(self._point.get(), point._point.get()):
             if result == 16:
                 raise ValueError("EC points are not on the same curve")
             raise ValueError("Error %d while adding two EC points" % result)
@@ -388,11 +386,12 @@ class EccPoint(object):
         if scalar < 0:
             raise ValueError("Scalar multiplication is only defined for non-negative integers")
         sb = long_to_bytes(scalar)
-        result = _ec_lib.ec_ws_scalar(self._point.get(),
-                                      c_uint8_ptr(sb),
-                                      c_size_t(len(sb)),
-                                      c_ulonglong(getrandbits(64)))
-        if result:
+        if result := _ec_lib.ec_ws_scalar(
+            self._point.get(),
+            c_uint8_ptr(sb),
+            c_size_t(len(sb)),
+            c_ulonglong(getrandbits(64)),
+        ):
             raise ValueError("Error %d during scalar multiplication" % result)
         return self
 
@@ -457,7 +456,7 @@ class EccKey(object):
         self._d = kwargs_.pop("d", None)
         self._point = kwargs_.pop("point", None)
         if kwargs_:
-            raise TypeError("Unknown parameters: " + str(kwargs_))
+            raise TypeError(f"Unknown parameters: {kwargs_}")
 
         if curve_name not in _curves:
             raise ValueError("Unsupported curve (%s)", curve_name)
@@ -480,10 +479,7 @@ class EccKey(object):
         return other.pointQ == self.pointQ
 
     def __repr__(self):
-        if self.has_private():
-            extra = ", d=%d" % int(self._d)
-        else:
-            extra = ""
+        extra = ", d=%d" % int(self._d) if self.has_private() else ""
         x, y = self.pointQ.xy
         return "EccKey(curve='%s', point_x=%d, point_y=%d%s)" % (self._curve.desc, x, y, extra)
 
@@ -595,11 +591,12 @@ class EccKey(object):
 
         unrestricted_oid = "1.2.840.10045.2.1"
         private_key = self._export_private_der(include_ec_params=False)
-        result = PKCS8.wrap(private_key,
-                            unrestricted_oid,
-                            key_params=DerObjectId(self._curve.oid),
-                            **kwargs)
-        return result
+        return PKCS8.wrap(
+            private_key,
+            unrestricted_oid,
+            key_params=DerObjectId(self._curve.oid),
+            **kwargs
+        )
 
     def _export_public_pem(self, compress):
         from Crypto.IO import PEM
@@ -647,7 +644,7 @@ class EccKey(object):
         middle = desc.split("-")[2]
         comps = (tobytes(desc), tobytes(middle), public_key)
         blob = b"".join([struct.pack(">I", len(x)) + x for x in comps])
-        return desc + " " + tostr(binascii.b2a_base64(blob))
+        return f"{desc} {tostr(binascii.b2a_base64(blob))}"
 
     def export_key(self, **kwargs):
         """Export this ECC key.
@@ -724,13 +721,12 @@ class EccKey(object):
                     raise ValueError("Empty passphrase")
             use_pkcs8 = args.pop("use_pkcs8", True)
             if ext_format == "PEM":
-                if use_pkcs8:
-                    if passphrase:
-                        return self._export_private_encrypted_pkcs8_in_clear_pem(passphrase, **args)
-                    else:
-                        return self._export_private_clear_pkcs8_in_clear_pem()
-                else:
+                if not use_pkcs8:
                     return self._export_private_pem(passphrase, **args)
+                if passphrase:
+                    return self._export_private_encrypted_pkcs8_in_clear_pem(passphrase, **args)
+                else:
+                    return self._export_private_clear_pkcs8_in_clear_pem()
             elif ext_format == "DER":
                 # DER
                 if passphrase and not use_pkcs8:
@@ -769,7 +765,7 @@ def generate(**kwargs):
     curve = _curves[curve_name]
     randfunc = kwargs.pop("randfunc", get_random_bytes)
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     d = Integer.random_range(min_inclusive=1,
                              max_exclusive=curve.order,
@@ -834,7 +830,7 @@ def _import_public_der(curve_oid, ec_point):
         if curve.oid == curve_oid:
             break
     else:
-        raise UnsupportedEccFeature("Unsupported ECC curve (OID: %s)" % curve_oid)
+        raise UnsupportedEccFeature(f"Unsupported ECC curve (OID: {curve_oid})")
 
     # See 2.2 in RFC5480 and 2.3.3 in SEC1
     # The first byte is:
@@ -890,7 +886,7 @@ def _import_subjectPublicKeyInfo(encoded, *kwargs):
     ecmqv_oid = "1.3.132.1.13"
 
     if oid not in (unrestricted_oid, ecdh_oid, ecmqv_oid):
-        raise UnsupportedEccFeature("Unsupported ECC purpose (OID: %s)" % oid)
+        raise UnsupportedEccFeature(f"Unsupported ECC purpose (OID: {oid})")
 
     # Parameters are mandatory for all three types
     if not params:
@@ -938,7 +934,7 @@ def _import_private_der(encoded, passphrase, curve_oid=None):
         if curve.oid == curve_oid:
             break
     else:
-        raise UnsupportedEccFeature("Unsupported ECC curve (OID: %s)" % curve_oid)
+        raise UnsupportedEccFeature(f"Unsupported ECC curve (OID: {curve_oid})")
 
     scalar_bytes = DerOctetString().decode(private_key[1]).payload
     modulus_bytes = curve.p.size_in_bytes()
@@ -977,7 +973,7 @@ def _import_pkcs8(encoded, passphrase):
     ecmqv_oid = "1.3.132.1.13"
 
     if algo_oid not in (unrestricted_oid, ecdh_oid, ecmqv_oid):
-        raise UnsupportedEccFeature("Unsupported ECC purpose (OID: %s)" % algo_oid)
+        raise UnsupportedEccFeature(f"Unsupported ECC purpose (OID: {algo_oid})")
 
     curve_oid = DerObjectId().decode(params).value
 
@@ -1051,7 +1047,7 @@ def _import_openssh_private_ecc(data, password):
 
     name, decrypted = read_string(decrypted)
     if name not in _curves:
-        raise UnsupportedEccFeature("Unsupported ECC curve %s" % name)
+        raise UnsupportedEccFeature(f"Unsupported ECC curve {name}")
     curve = _curves[name]
     modulus_bytes = (curve.modulus_bits + 7) // 8
 
@@ -1138,9 +1134,13 @@ def import_key(encoded, passphrase=None):
         if sys.version_info[:2] != (2, 6):
             ecparams_start = "-----BEGIN EC PARAMETERS-----"
             ecparams_end = "-----END EC PARAMETERS-----"
-            text_encoded = re.sub(ecparams_start + ".*?" + ecparams_end, "",
-                                  text_encoded,
-                                  flags=re.DOTALL)
+            text_encoded = re.sub(
+                f"{ecparams_start}.*?{ecparams_end}",
+                "",
+                text_encoded,
+                flags=re.DOTALL,
+            )
+
 
         der_encoded, marker, enc_flag = PEM.decode(text_encoded, passphrase)
         if enc_flag:
@@ -1174,11 +1174,11 @@ if __name__ == "__main__":
     count = 3000
 
     start = time.time()
-    for x in range(count):
+    for _ in range(count):
         pointX = point * d
     print("(P-256 G)", (time.time() - start) / count * 1000, "ms")
 
     start = time.time()
-    for x in range(count):
+    for _ in range(count):
         pointX = pointX * d
     print("(P-256 arbitrary point)", (time.time() - start) / count * 1000, "ms")

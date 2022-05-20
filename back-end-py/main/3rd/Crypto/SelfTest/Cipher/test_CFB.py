@@ -147,11 +147,8 @@ class NistCfbVectors(unittest.TestCase):
                              segment_size=segment_size)
 
             def get_input(input_text, output_seq, j):
-                # CFB128
                 if segment_size == 128:
-                    if j >= 2:
-                        return output_seq[-2]
-                    return [input_text, tv.iv][j]
+                    return output_seq[-2] if j >= 2 else [input_text, tv.iv][j]
                 # CFB8
                 if j == 0:
                     return input_text
@@ -194,10 +191,7 @@ class NistCfbVectors(unittest.TestCase):
                 cipher = DES.new(tv.keys, DES.MODE_CFB, tv.iv,
                                  segment_size=segment_size)
             else:
-                if tv.key1 != tv.key3:
-                    key = tv.key1 + tv.key2 + tv.key3  # Option 3
-                else:
-                    key = tv.key1 + tv.key2            # Option 2
+                key = tv.key1 + tv.key2 + tv.key3 if tv.key1 != tv.key3 else tv.key1 + tv.key2
                 cipher = DES3.new(key, DES3.MODE_CFB, tv.iv,
                                   segment_size=segment_size)
             if direction == "[ENCRYPT]":

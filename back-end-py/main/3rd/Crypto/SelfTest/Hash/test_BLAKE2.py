@@ -155,7 +155,7 @@ class Blake2Test(unittest.TestCase):
 
     def test_oid(self):
 
-        prefix = "1.3.6.1.4.1.1722.12.2." + self.oid_variant + "."
+        prefix = f"1.3.6.1.4.1.1722.12.2.{self.oid_variant}."
 
         for digest_bits in self.digest_bits_oid:
             h = self.BLAKE2.new(digest_bits=digest_bits)
@@ -269,8 +269,10 @@ class Blake2OfficialTestVector(unittest.TestCase):
     def setUp(self):
 
         test_vector_file = pycryptodome_filename(
-                            ("Crypto", "SelfTest", "Hash", "test_vectors", self.name),
-                            self.name.lower() + "-test.txt")
+            ("Crypto", "SelfTest", "Hash", "test_vectors", self.name),
+            f"{self.name.lower()}-test.txt",
+        )
+
 
         expected = "in"
         self.test_vectors = []
@@ -285,10 +287,7 @@ class Blake2OfficialTestVector(unittest.TestCase):
                     raise ValueError("Incorrect test vector format (line %d)"
                                      % line_number)
 
-                if res.group(1):
-                    bin_value = unhexlify(tobytes(res.group(1)))
-                else:
-                    bin_value = b""
+                bin_value = unhexlify(tobytes(res[1])) if res[1] else b""
                 if expected == "in":
                     input_data = bin_value
                     expected = "key"
@@ -342,7 +341,7 @@ class Blake2TestVector1(unittest.TestCase):
                     raise ValueError("Incorrect test vector format (line %d)"
                                      % line_number)
 
-                self.test_vectors.append(unhexlify(tobytes(res.group(1))))
+                self.test_vectors.append(unhexlify(tobytes(res[1])))
 
     def runTest(self):
 
@@ -387,8 +386,8 @@ class Blake2TestVector2(unittest.TestCase):
                     raise ValueError("Incorrect test vector format (line %d)"
                                      % line_number)
 
-                key_size = int(res.group(1))
-                result = unhexlify(tobytes(res.group(2)))
+                key_size = int(res[1])
+                result = unhexlify(tobytes(res[2]))
                 self.test_vectors.append((key_size, result))
 
     def runTest(self):

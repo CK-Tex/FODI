@@ -56,7 +56,7 @@ def raise_ioerror(error):
         message = ERRORS.get(error)
     if not message:
         message = "decoder error %d" % error
-    raise OSError(message + " when reading image file")
+    raise OSError(f"{message} when reading image file")
 
 
 #
@@ -320,7 +320,7 @@ class StubImageFile(ImageFile):
     def load(self):
         loader = self._load()
         if loader is None:
-            raise OSError("cannot find loader for this %s file" % self.format)
+            raise OSError(f"cannot find loader for this {self.format} file")
         image = loader.load(self)
         assert image is not None
         # become the other object (!)
@@ -365,11 +365,7 @@ class Parser:
         if self.finished:
             return
 
-        if self.data is None:
-            self.data = data
-        else:
-            self.data = self.data + data
-
+        self.data = data if self.data is None else self.data + data
         # parse what we have
         if self.decoder:
 
@@ -387,23 +383,15 @@ class Parser:
                 # end of stream
                 self.data = None
                 self.finished = 1
-                if e < 0:
-                    # decoding error
-                    self.image = None
-                    raise_ioerror(e)
-                else:
+                if e >= 0:
                     # end of image
                     return
+                # decoding error
+                self.image = None
+                raise_ioerror(e)
             self.data = self.data[n:]
 
-        elif self.image:
-
-            # if we end up here with no decoder, this file cannot
-            # be incrementally parsed.  wait until we've gotten all
-            # available data
-            pass
-
-        else:
+        elif not self.image:
 
             # attempt to open this file
             try:
@@ -639,11 +627,7 @@ class PyDecoder:
         # following c code
         self.im = im
 
-        if extents:
-            (x0, y0, x1, y1) = extents
-        else:
-            (x0, y0, x1, y1) = (0, 0, 0, 0)
-
+        (x0, y0, x1, y1) = extents or (0, 0, 0, 0)
         if x0 == 0 and x1 == 0:
             self.state.xsize, self.state.ysize = self.im.size
         else:

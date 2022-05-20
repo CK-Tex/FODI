@@ -312,12 +312,12 @@ class PKCS1_OAEP_Tests(unittest.TestCase):
 
         def testEncryptDecrypt1(self):
                 # Encrypt/Decrypt messages of length [0..128-2*20-2]
-                for pt_len in range(0,128-2*20-2):
-                    pt = self.rng(pt_len)
-                    cipher = PKCS.new(self.key1024)
-                    ct = cipher.encrypt(pt)
-                    pt2 = cipher.decrypt(ct)
-                    self.assertEqual(pt,pt2)
+            for pt_len in range(128-2*20-2):
+                pt = self.rng(pt_len)
+                cipher = PKCS.new(self.key1024)
+                ct = cipher.encrypt(pt)
+                pt2 = cipher.decrypt(ct)
+                self.assertEqual(pt,pt2)
 
         def testEncryptDecrypt2(self):
                 # Helper function to monitor what's requested from RNG
@@ -424,14 +424,14 @@ class TestVectorsWycheproof(unittest.TestCase):
                 mgf = lambda x,y: MGF1(x, y, SHA512)
             else:
                 raise ValueError("Unknown mgf/sha " + group['mgfSha'])
-        
+
             for test in group['tests']:
                 tv = TestVector()
 
                 tv.rsa_key = rsa_key
                 tv.hash_mod = hash_mod
                 tv.mgf = mgf
-                tv.algo = "%s with MGF1/%s" % (group['sha'], group['mgfSha'])
+                tv.algo = f"{group['sha']} with MGF1/{group['mgfSha']}"
 
                 tv.id = test['tcId']
                 tv.comment = test['comment']
@@ -473,10 +473,10 @@ class TestVectorsWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt %s Test #%s" % (tv.algo, tv.id)
+        self._id = f"Wycheproof Decrypt {tv.algo} Test #{tv.id}"
 
         cipher = PKCS.new(tv.rsa_key, hashAlgo=tv.hash_mod, mgfunc=tv.mgf, label=tv.label)
         try:

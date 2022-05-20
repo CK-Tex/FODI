@@ -105,12 +105,15 @@ class EaxMode(object):
             raise TypeError("nonce must be bytes, bytearray or memoryview")
 
         self._omac = [
-                CMAC.new(key,
-                         b'\x00' * (self.block_size - 1) + struct.pack('B', i),
-                         ciphermod=factory,
-                         cipher_params=cipher_params)
-                for i in range(0, 3)
-                ]
+            CMAC.new(
+                key,
+                b'\x00' * (self.block_size - 1) + struct.pack('B', i),
+                ciphermod=factory,
+                cipher_params=cipher_params,
+            )
+            for i in range(3)
+        ]
+
 
         # Compute MAC of nonce
         self._omac[0].update(self.nonce)
@@ -403,6 +406,6 @@ def _create_eax_cipher(factory, **kwargs):
             nonce = get_random_bytes(16)
         mac_len = kwargs.pop("mac_len", factory.block_size)
     except KeyError as e:
-        raise TypeError("Missing parameter: " + str(e))
+        raise TypeError(f"Missing parameter: {str(e)}")
 
     return EaxMode(factory, key, nonce, mac_len, kwargs)

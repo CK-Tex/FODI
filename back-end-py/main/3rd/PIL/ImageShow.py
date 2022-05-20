@@ -44,10 +44,14 @@ def show(image, title=None, **options):
     :param \**options: Additional viewer options.
     :returns: True if a suitable viewer was found, false otherwise.
     """
-    for viewer in _viewers:
-        if viewer.show(image, title=title, **options):
-            return 1
-    return 0
+    return next(
+        (
+            1
+            for viewer in _viewers
+            if viewer.show(image, title=title, **options)
+        ),
+        0,
+    )
 
 
 class Viewer:
@@ -121,9 +125,7 @@ elif sys.platform == "darwin":
             # on darwin open returns immediately resulting in the temp
             # file removal while app is opening
             command = "open -a Preview.app"
-            command = "({} {}; sleep 20; rm -f {})&".format(
-                command, quote(file), quote(file)
-            )
+            command = f"({command} {quote(file)}; sleep 20; rm -f {quote(file)})&"
             return command
 
         def show_file(self, file, **options):
@@ -152,7 +154,7 @@ else:
 
         def get_command(self, file, **options):
             command = self.get_command_ex(file, **options)[0]
-            return "({} {}; rm -f {})&".format(command, quote(file), quote(file))
+            return f"({command} {quote(file)}; rm -f {quote(file)})&"
 
         def show_file(self, file, **options):
             """Display given file"""
@@ -161,9 +163,7 @@ else:
                 f.write(file)
             with open(path, "r") as f:
                 command = self.get_command_ex(file, **options)[0]
-                subprocess.Popen(
-                    ["im=$(cat);" + command + " $im; rm -f $im"], shell=True, stdin=f
-                )
+                subprocess.Popen([f"im=$(cat);{command} $im; rm -f $im"], shell=True, stdin=f)
             os.remove(path)
             return 1
 
@@ -191,7 +191,7 @@ else:
             # imagemagick's display command instead.
             command = executable = "xv"
             if title:
-                command += " -name %s" % quote(title)
+                command += f" -name {quote(title)}"
             return command, executable
 
     if shutil.which("xv"):

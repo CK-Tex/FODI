@@ -57,8 +57,8 @@ def _create_cipher(factory, key, mode, *args, **kwargs):
 
     modes = dict(_modes)
     if kwargs.pop("add_aes_modes", False):
-        modes.update(_extra_modes)
-    if not mode in modes:
+        modes |= _extra_modes
+    if mode not in modes:
         raise ValueError("Mode not supported")
 
     if args:

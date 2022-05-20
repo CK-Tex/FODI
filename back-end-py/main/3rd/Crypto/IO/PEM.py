@@ -90,7 +90,7 @@ def encode(data, marker, passphrase=None, randfunc=None):
     chunks = [tostr(b2a_base64(data[i:i + 48]))
               for i in range(0, len(data), 48)]
     out += "".join(chunks)
-    out += "-----END %s-----" % marker
+    out += f"-----END {marker}-----"
     return out
 
 
@@ -127,12 +127,12 @@ def decode(pem_data, passphrase=None):
     m = r.match(pem_data)
     if not m:
         raise ValueError("Not a valid PEM pre boundary")
-    marker = m.group(1)
+    marker = m[1]
 
     # Verify Post-Encapsulation Boundary
     r = re.compile(r"-----END (.*)-----\s*$")
     m = r.search(pem_data)
-    if not m or m.group(1) != marker:
+    if not m or m[1] != marker:
         raise ValueError("Not a valid PEM post boundary")
 
     # Removes spaces and slit on lines
@@ -170,7 +170,7 @@ def decode(pem_data, passphrase=None):
             objdec = AES.new(key, AES.MODE_GCM, nonce=salt)
             padding = False
         else:
-            raise ValueError("Unsupport PEM encryption algorithm (%s)." % algo)
+            raise ValueError(f"Unsupport PEM encryption algorithm ({algo}).")
         lines = lines[2:]
     else:
         objdec = None

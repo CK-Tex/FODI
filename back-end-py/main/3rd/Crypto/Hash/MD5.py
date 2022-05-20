@@ -71,8 +71,7 @@ class MD5Hash(object):
 
     def __init__(self, data=None):
         state = VoidPointer()
-        result = _raw_md5_lib.MD5_init(state.address_of())
-        if result:
+        if result := _raw_md5_lib.MD5_init(state.address_of()):
             raise ValueError("Error %d while instantiating MD5"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -87,10 +86,9 @@ class MD5Hash(object):
             data (byte string/byte array/memoryview): The next chunk of the message being hashed.
         """
 
-        result = _raw_md5_lib.MD5_update(self._state.get(),
-                                         c_uint8_ptr(data),
-                                         c_size_t(len(data)))
-        if result:
+        if result := _raw_md5_lib.MD5_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while instantiating MD5"
                              % result)
 
@@ -103,9 +101,7 @@ class MD5Hash(object):
         """
 
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_md5_lib.MD5_digest(self._state.get(),
-                                           bfr)
-        if result:
+        if result := _raw_md5_lib.MD5_digest(self._state.get(), bfr):
             raise ValueError("Error %d while instantiating MD5"
                              % result)
 
@@ -133,9 +129,7 @@ class MD5Hash(object):
         """
 
         clone = MD5Hash()
-        result = _raw_md5_lib.MD5_copy(self._state.get(),
-                                         clone._state.get())
-        if result:
+        if result := _raw_md5_lib.MD5_copy(self._state.get(), clone._state.get()):
             raise ValueError("Error %d while copying MD5" % result)
         return clone
 
@@ -171,14 +165,13 @@ def _pbkdf2_hmac_assist(inner, outer, first_digest, iterations):
     assert iterations > 0
 
     bfr = create_string_buffer(digest_size);
-    result = _raw_md5_lib.MD5_pbkdf2_hmac_assist(
-                    inner._state.get(),
-                    outer._state.get(),
-                    first_digest,
-                    bfr,
-                    c_size_t(iterations))
-
-    if result:
+    if result := _raw_md5_lib.MD5_pbkdf2_hmac_assist(
+        inner._state.get(),
+        outer._state.get(),
+        first_digest,
+        bfr,
+        c_size_t(iterations),
+    ):
         raise ValueError("Error %d with PBKDF2-HMAC assis for MD5" % result)
 
     return get_raw_buffer(bfr)

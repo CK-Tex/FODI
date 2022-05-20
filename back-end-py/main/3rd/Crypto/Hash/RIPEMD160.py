@@ -75,8 +75,7 @@ class RIPEMD160Hash(object):
 
     def __init__(self, data=None):
         state = VoidPointer()
-        result = _raw_ripemd160_lib.ripemd160_init(state.address_of())
-        if result:
+        if result := _raw_ripemd160_lib.ripemd160_init(state.address_of()):
             raise ValueError("Error %d while instantiating RIPEMD160"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -91,10 +90,9 @@ class RIPEMD160Hash(object):
             data (byte string/byte array/memoryview): The next chunk of the message being hashed.
         """
 
-        result = _raw_ripemd160_lib.ripemd160_update(self._state.get(),
-                                                     c_uint8_ptr(data),
-                                                     c_size_t(len(data)))
-        if result:
+        if result := _raw_ripemd160_lib.ripemd160_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while instantiating ripemd160"
                              % result)
 
@@ -107,9 +105,7 @@ class RIPEMD160Hash(object):
         """
 
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_ripemd160_lib.ripemd160_digest(self._state.get(),
-                                                     bfr)
-        if result:
+        if result := _raw_ripemd160_lib.ripemd160_digest(self._state.get(), bfr):
             raise ValueError("Error %d while instantiating ripemd160"
                              % result)
 
@@ -137,9 +133,9 @@ class RIPEMD160Hash(object):
         """
 
         clone = RIPEMD160Hash()
-        result = _raw_ripemd160_lib.ripemd160_copy(self._state.get(),
-                                                   clone._state.get())
-        if result:
+        if result := _raw_ripemd160_lib.ripemd160_copy(
+            self._state.get(), clone._state.get()
+        ):
             raise ValueError("Error %d while copying ripemd160" % result)
         return clone
 

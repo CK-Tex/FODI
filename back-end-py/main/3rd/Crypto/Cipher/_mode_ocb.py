@@ -169,14 +169,15 @@ class OcbMode(object):
         # Create low-level cipher instance
         raw_cipher = factory._create_base_cipher(cipher_params)
         if cipher_params:
-            raise TypeError("Unknown keywords: " + str(cipher_params))
+            raise TypeError(f"Unknown keywords: {str(cipher_params)}")
 
         self._state = VoidPointer()
-        result = _raw_ocb_lib.OCB_start_operation(raw_cipher.get(),
-                                                  offset_0,
-                                                  c_size_t(len(offset_0)),
-                                                  self._state.address_of())
-        if result:
+        if result := _raw_ocb_lib.OCB_start_operation(
+            raw_cipher.get(),
+            offset_0,
+            c_size_t(len(offset_0)),
+            self._state.address_of(),
+        ):
             raise ValueError("Error %d while instantiating the OCB mode"
                              % result)
 
@@ -190,10 +191,9 @@ class OcbMode(object):
         raw_cipher.release()
 
     def _update(self, assoc_data, assoc_data_len):
-        result = _raw_ocb_lib.OCB_update(self._state.get(),
-                                         c_uint8_ptr(assoc_data),
-                                         c_size_t(assoc_data_len))
-        if result:
+        if result := _raw_ocb_lib.OCB_update(
+            self._state.get(), c_uint8_ptr(assoc_data), c_size_t(assoc_data_len)
+        ):
             raise ValueError("Error %d while computing MAC in OCB mode" % result)
 
     def update(self, assoc_data):
@@ -245,11 +245,9 @@ class OcbMode(object):
                             trans_func, trans_desc):
 
         out_data = create_string_buffer(in_data_len)
-        result = trans_func(self._state.get(),
-                            in_data,
-                            out_data,
-                            c_size_t(in_data_len))
-        if result:
+        if result := trans_func(
+            self._state.get(), in_data, out_data, c_size_t(in_data_len)
+        ):
             raise ValueError("Error %d while %sing in OCB mode"
                              % (result, trans_desc))
         return get_raw_buffer(out_data)
@@ -320,10 +318,7 @@ class OcbMode(object):
             raise TypeError("encrypt() can only be called after"
                             " initialization or an update()")
 
-        if plaintext is None:
-            self._next = [self.digest]
-        else:
-            self._next = [self.encrypt]
+        self._next = [self.digest] if plaintext is None else [self.encrypt]
         return self._transcrypt(plaintext, _raw_ocb_lib.OCB_encrypt, "encrypt")
 
     def decrypt(self, ciphertext=None):
@@ -349,10 +344,7 @@ class OcbMode(object):
             raise TypeError("decrypt() can only be called after"
                             " initialization or an update()")
 
-        if ciphertext is None:
-            self._next = [self.verify]
-        else:
-            self._next = [self.decrypt]
+        self._next = [self.verify] if ciphertext is None else [self.decrypt]
         return self._transcrypt(ciphertext,
                                 _raw_ocb_lib.OCB_decrypt,
                                 "decrypt")
@@ -367,11 +359,9 @@ class OcbMode(object):
             self._cache_A = b""
 
         mac_tag = create_string_buffer(16)
-        result = _raw_ocb_lib.OCB_digest(self._state.get(),
-                                         mac_tag,
-                                         c_size_t(len(mac_tag))
-                                         )
-        if result:
+        if result := _raw_ocb_lib.OCB_digest(
+            self._state.get(), mac_tag, c_size_t(len(mac_tag))
+        ):
             raise ValueError("Error %d while computing digest in OCB mode"
                              % result)
         self._mac_tag = get_raw_buffer(mac_tag)[:self._mac_len]
@@ -520,6 +510,6 @@ def _create_ocb_cipher(factory, **kwargs):
             nonce = get_random_bytes(15)
         mac_len = kwargs.pop("mac_len", 16)
     except KeyError as e:
-        raise TypeError("Keyword missing: " + str(e))
+        raise TypeError(f"Keyword missing: {str(e)}")
 
     return OcbMode(factory, nonce, mac_len, kwargs)

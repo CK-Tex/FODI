@@ -96,9 +96,7 @@ class PKCS115_Cipher:
         em_int = bytes_to_long(em)
         # Step 3b (RSAEP)
         m_int = self._key._encrypt(em_int)
-        # Step 3c (I2OSP)
-        c = long_to_bytes(m_int, k)
-        return c
+        return long_to_bytes(m_int, k)
 
     def decrypt(self, ciphertext, sentinel):
         r"""Decrypt a PKCS#1 v1.5 ciphertext.

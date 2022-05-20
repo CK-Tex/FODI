@@ -103,18 +103,11 @@ class DssSigScheme(object):
         z = Integer.from_bytes(msg_hash.digest()[:self._order_bytes])
         sig_pair = self._key._sign(z, nonce)
 
-        # Encode the signature into a single byte string
-        if self._encoding == 'binary':
-            output = b"".join([long_to_bytes(x, self._order_bytes)
-                                 for x in sig_pair])
-        else:
-            # Dss-sig  ::=  SEQUENCE  {
-            #               r       OCTET STRING,
-            #               s       OCTET STRING
-            # }
-            output = DerSequence(sig_pair).encode()
-
-        return output
+        return (
+            b"".join([long_to_bytes(x, self._order_bytes) for x in sig_pair])
+            if self._encoding == 'binary'
+            else DerSequence(sig_pair).encode()
+        )
 
     def verify(self, msg_hash, signature):
         """Check if a certain (EC)DSA signature is authentic.
@@ -194,10 +187,7 @@ class DeterministicDsaSigScheme(DssSigScheme):
         """See 2.3.4 in RFC6979"""
 
         z1 = self._bits2int(bstr)
-        if z1 < self._order:
-            z2 = z1
-        else:
-            z2 = z1 - self._order
+        z2 = z1 if z1 < self._order else z1 - self._order
         return self._int2octets(z2)
 
     def _compute_nonce(self, mhash):
@@ -298,13 +288,13 @@ class FipsEcDsaSigScheme(DssSigScheme):
 
         sha256 = ( "2.16.840.1.101.3.4.2.1", "2.16.840.1.101.3.4.2.8" )
         sha384 = ( "2.16.840.1.101.3.4.2.2", "2.16.840.1.101.3.4.2.9" )
-        sha512 = ( "2.16.840.1.101.3.4.2.3", "2.16.840.1.101.3.4.2.10")
-
         if msg_hash.oid in sha256:
             return modulus_bits <= 256
         elif msg_hash.oid in sha384:
             return modulus_bits <= 384
         else:
+            sha512 = ( "2.16.840.1.101.3.4.2.3", "2.16.840.1.101.3.4.2.10")
+
             return msg_hash.oid in sha512
 
 
@@ -392,11 +382,7 @@ def new(key, mode, encoding='binary', randfunc=None):
         order = Integer(key.q)
         private_key_attr = 'x'
 
-    if key.has_private():
-        private_key = getattr(key, private_key_attr)
-    else:
-        private_key = None
-
+    private_key = getattr(key, private_key_attr) if key.has_private() else None
     if mode == 'deterministic-rfc6979':
         return DeterministicDsaSigScheme(key, encoding, order, private_key)
     elif mode == 'fips-186-3':

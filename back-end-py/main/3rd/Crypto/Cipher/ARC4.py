@@ -85,11 +85,12 @@ class ARC4Cipher:
         """
 
         ciphertext = create_string_buffer(len(plaintext))
-        result = _raw_arc4_lib.ARC4_stream_encrypt(self._state.get(),
-                                                   c_uint8_ptr(plaintext),
-                                                   ciphertext,
-                                                   c_size_t(len(plaintext)))
-        if result:
+        if result := _raw_arc4_lib.ARC4_stream_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            ciphertext,
+            c_size_t(len(plaintext)),
+        ):
             raise ValueError("Error %d while encrypting with RC4" % result)
         return get_raw_buffer(ciphertext)
 

@@ -100,14 +100,15 @@ class DsaKey(object):
 
     def __init__(self, key_dict):
         input_set = set(key_dict.keys())
-        public_set = set(('y' , 'g', 'p', 'q'))
+        public_set = {'y', 'g', 'p', 'q'}
         if not public_set.issubset(input_set):
-            raise ValueError("Some DSA components are missing = %s" %
-                             str(public_set - input_set))
+            raise ValueError(
+                f"Some DSA components are missing = {str(public_set - input_set)}"
+            )
+
         extra_set = input_set - public_set
-        if extra_set and extra_set != set(('x',)):
-            raise ValueError("Unknown DSA components = %s" %
-                             str(extra_set - set(('x',))))
+        if extra_set and extra_set != {'x'}:
+            raise ValueError(f"Unknown DSA components = {str(extra_set - {'x'})}")
         self._key = dict(key_dict)
 
     def _sign(self, m, k):
@@ -156,7 +157,7 @@ class DsaKey(object):
             a new :class:`DsaKey` object
         """
 
-        public_components = dict((k, self._key[k]) for k in ('y', 'g', 'p', 'q'))
+        public_components = {k: self._key[k] for k in ('y', 'g', 'p', 'q')}
         return DsaKey(public_components)
 
     def __eq__(self, other):
@@ -274,10 +275,7 @@ class DsaKey(object):
             tup1 = [self._key[x].to_bytes() for x in ('p', 'q', 'g', 'y')]
 
             def func(x):
-                if (bord(x[0]) & 0x80):
-                    return bchr(0) + x
-                else:
-                    return x
+                return bchr(0) + x if (bord(x[0]) & 0x80) else x
 
             tup2 = [func(x) for x in tup1]
             keyparts = [b'ssh-dss'] + tup2
@@ -385,8 +383,11 @@ def _generate_domain(L, randfunc):
         V = [ SHA256.new(seed + Integer(offset + j).to_bytes()).digest()
               for j in iter_range(n + 1) ]
         V = [ Integer.from_bytes(v) for v in V ]
-        W = sum([V[i] * (1 << (i * outlen)) for i in iter_range(n)],
-                (V[n] & ((1 << b_) - 1)) * (1 << (n * outlen)))
+        W = sum(
+            (V[i] * (1 << (i * outlen)) for i in iter_range(n)),
+            (V[n] & ((1 << b_) - 1)) * (1 << (n * outlen)),
+        )
+
 
         X = Integer(W + upper_bit) # 2^{L-1} < X < 2^{L}
         assert(X.size_in_bits() == L)

@@ -69,7 +69,7 @@ def _build_impl(lib, postfix):
     funcs = ( "ghash", "ghash_expand", "ghash_destroy" )
     GHASH_Imp = namedtuple('_GHash_Imp', funcs)
     try:
-        imp_funcs = [ getattr(lib, x + "_" + postfix) for x in funcs ]
+        imp_funcs = [getattr(lib, f"{x}_{postfix}") for x in funcs]
     except AttributeError:      # Make sphinx stop complaining with its mocklib
         imp_funcs = [ None ] * 3
     params = dict(zip(funcs, imp_funcs))
@@ -79,8 +79,7 @@ def _build_impl(lib, postfix):
 def _get_ghash_portable():
     api = _ghash_api_template.replace("%imp%", "portable")
     lib = load_pycryptodome_raw_lib("Crypto.Hash._ghash_portable", api)
-    result = _build_impl(lib, "portable")
-    return result
+    return _build_impl(lib, "portable")
 _ghash_portable = _get_ghash_portable()
 
 
@@ -117,9 +116,9 @@ class _GHASH(object):
         self.ghash_c = ghash_c
 
         self._exp_key = VoidPointer()
-        result = ghash_c.ghash_expand(c_uint8_ptr(subkey),
-                                      self._exp_key.address_of())
-        if result:
+        if result := ghash_c.ghash_expand(
+            c_uint8_ptr(subkey), self._exp_key.address_of()
+        ):
             raise ValueError("Error %d while expanding the GHASH key" % result)
 
         self._exp_key = SmartPointer(self._exp_key.get(),
@@ -131,12 +130,13 @@ class _GHASH(object):
     def update(self, block_data):
         assert len(block_data) % 16 == 0
 
-        result = self.ghash_c.ghash(self._last_y,
-                                    c_uint8_ptr(block_data),
-                                    c_size_t(len(block_data)),
-                                    self._last_y,
-                                    self._exp_key.get())
-        if result:
+        if result := self.ghash_c.ghash(
+            self._last_y,
+            c_uint8_ptr(block_data),
+            c_size_t(len(block_data)),
+            self._last_y,
+            self._exp_key.get(),
+        ):
             raise ValueError("Error %d while updating GHASH" % result)
 
         return self
@@ -603,7 +603,7 @@ def _create_gcm_cipher(factory, **kwargs):
     try:
         key = kwargs.pop("key")
     except KeyError as e:
-        raise TypeError("Missing parameter:" + str(e))
+        raise TypeError(f"Missing parameter:{str(e)}")
 
     nonce = kwargs.pop("nonce", None)
     if nonce is None:
@@ -612,9 +612,5 @@ def _create_gcm_cipher(factory, **kwargs):
 
     # Not documented - only used for testing
     use_clmul = kwargs.pop("use_clmul", True)
-    if use_clmul and _ghash_clmul:
-        ghash_c = _ghash_clmul
-    else:
-        ghash_c = _ghash_portable
-
+    ghash_c = _ghash_clmul if use_clmul and _ghash_clmul else _ghash_portable
     return GcmMode(factory, key, nonce, mac_len, kwargs, ghash_c)

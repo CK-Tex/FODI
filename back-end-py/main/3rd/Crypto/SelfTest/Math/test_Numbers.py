@@ -73,7 +73,7 @@ class TestIntegerBase(unittest.TestCase):
         v6 = Integer(v1)
         self.assertEqual(v1, v6)
 
-        self.failIf(Integer(0) == None)
+        self.failIf(Integer(0) is None)
 
     def test_conversion_to_int(self):
         v1, v2 = self.Integers(-23, 2 ** 1000)
@@ -314,14 +314,14 @@ class TestIntegerBase(unittest.TestCase):
 
         # Test with all quadratic residues in several fields
         for p in (11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53):
-            for i in range(0, p):
+            for i in range(p):
                 square = i**2 % p
                 res = self.Integer(square).sqrt(p)
                 assert res in (i, p - i)
 
         # 2 is a non-quadratic reside in Z_11
         self.assertRaises(ValueError, self.Integer(2).sqrt, 11)
-        
+
         # 10 is not a prime
         self.assertRaises(ValueError, self.Integer(4).sqrt, 10)
 
@@ -724,11 +724,11 @@ class testIntegerRandom(unittest.TestCase):
 
         func = IntegerNative.random_range
 
-        for x in range(200):
+        for _ in range(200):
             a = func(min_inclusive=1, max_inclusive=15)
             self.failUnless(1 <= a <= 15)
 
-        for x in range(200):
+        for _ in range(200):
             a = func(min_inclusive=1, max_exclusive=15)
             self.failUnless(1 <= a < 15)
 

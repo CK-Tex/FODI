@@ -128,11 +128,11 @@ class _GMP(object):
 
     def __getattr__(self, name):
         if name.startswith("mpz_"):
-            func_name = "__gmpz_" + name[4:]
+            func_name = f"__gmpz_{name[4:]}"
         elif name.startswith("gmp_"):
-            func_name = "__gmp_" + name[4:]
+            func_name = f"__gmp_{name[4:]}"
         else:
-            raise AttributeError("Attribute %s is invalid" % name)
+            raise AttributeError(f"Attribute {name} is invalid")
         func = getattr(lib, func_name)
         setattr(self, name, func)
         return func
@@ -183,7 +183,7 @@ class IntegerGMP(IntegerBase):
         return str(int(self))
 
     def __repr__(self):
-        return "Integer(%s)" % str(self)
+        return f"Integer({str(self)})"
 
     # Only Python 2.x
     def __hex__(self):
@@ -260,14 +260,18 @@ class IntegerGMP(IntegerBase):
         return func(self._mpz_p, term._mpz_p)
 
     def __eq__(self, term):
-        if not (isinstance(term, IntegerGMP) or is_native_int(term)):
-            return False
-        return self._apply_and_return(_gmp.mpz_cmp, term) == 0
+        return (
+            self._apply_and_return(_gmp.mpz_cmp, term) == 0
+            if (isinstance(term, IntegerGMP) or is_native_int(term))
+            else False
+        )
 
     def __ne__(self, term):
-        if not (isinstance(term, IntegerGMP) or is_native_int(term)):
-            return True
-        return self._apply_and_return(_gmp.mpz_cmp, term) != 0
+        return (
+            self._apply_and_return(_gmp.mpz_cmp, term) != 0
+            if (isinstance(term, IntegerGMP) or is_native_int(term))
+            else True
+        )
 
     def __lt__(self, term):
         return self._apply_and_return(_gmp.mpz_cmp, term) < 0
@@ -511,10 +515,7 @@ class IntegerGMP(IntegerBase):
         if pos < 0:
             raise ValueError("negative shift count")
         if pos > 65536:
-            if self < 0:
-                return -1
-            else:
-                return 0
+            return -1 if self < 0 else 0
         _gmp.mpz_tdiv_q_2exp(result._mpz_p,
                              self._mpz_p,
                              c_ulong(int(pos)))
@@ -524,10 +525,7 @@ class IntegerGMP(IntegerBase):
         if pos < 0:
             raise ValueError("negative shift count")
         if pos > 65536:
-            if self < 0:
-                return -1
-            else:
-                return 0
+            return -1 if self < 0 else 0
         _gmp.mpz_tdiv_q_2exp(self._mpz_p,
                              self._mpz_p,
                              c_ulong(int(pos)))
@@ -699,9 +697,8 @@ class IntegerGMP(IntegerBase):
     def __del__(self):
 
         try:
-            if self._mpz_p is not None:
-                if self._initialized:
-                    _gmp.mpz_clear(self._mpz_p)
+            if self._mpz_p is not None and self._initialized:
+                _gmp.mpz_clear(self._mpz_p)
 
             self._mpz_p = None
         except AttributeError:

@@ -74,10 +74,9 @@ def _create_base_cipher(dict_parameters):
     stop_operation = _raw_blowfish_lib.Blowfish_stop_operation
 
     void_p = VoidPointer()
-    result = start_operation(c_uint8_ptr(key),
-                             c_size_t(len(key)),
-                             void_p.address_of())
-    if result:
+    if result := start_operation(
+        c_uint8_ptr(key), c_size_t(len(key)), void_p.address_of()
+    ):
         raise ValueError("Error %X while instantiating the Blowfish cipher"
                          % result)
     return SmartPointer(void_p.get(), stop_operation)

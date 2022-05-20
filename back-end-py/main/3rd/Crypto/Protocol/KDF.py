@@ -90,7 +90,7 @@ def PBKDF1(password, salt, dkLen, count=1000, hashAlgo=None):
         raise TypeError("Selected hash algorithm has a too short digest (%d bytes)." % digest)
     if len(salt) != 8:
         raise ValueError("Salt is not 8 bytes long (%d bytes instead)." % len(salt))
-    for i in iter_range(count-1):
+    for _ in iter_range(count-1):
         pHash = pHash.new(pHash.digest())
     return pHash.digest()[:dkLen]
 
@@ -201,14 +201,11 @@ class _S2V(object):
         self._key = _copy_bytes(None, None, key)
         self._ciphermod = ciphermod
         self._last_string = self._cache = b'\x00' * ciphermod.block_size
-        
+
         # Max number of update() call we can process
         self._n_updates = ciphermod.block_size * 8 - 1
-        
-        if cipher_params is None:
-            self._cipher_params = {}
-        else:
-            self._cipher_params = dict(cipher_params)
+
+        self._cipher_params = {} if cipher_params is None else dict(cipher_params)
 
     @staticmethod
     def new(key, ciphermod):
@@ -392,12 +389,13 @@ def scrypt(password, salt, key_len, N, r, p, num_keys=1):
     for flow in iter_range(p):
         idx = flow * 128 * r
         buffer_out = create_string_buffer(128 * r)
-        result = scryptROMix(stage_1[idx : idx + 128 * r],
-                             buffer_out,
-                             c_size_t(128 * r),
-                             N,
-                             core)
-        if result:
+        if result := scryptROMix(
+            stage_1[idx : idx + 128 * r],
+            buffer_out,
+            c_size_t(128 * r),
+            N,
+            core,
+        ):
             raise ValueError("Error %X while running scrypt" % result)
         data_out += [ get_raw_buffer(buffer_out) ]
 
@@ -409,9 +407,10 @@ def scrypt(password, salt, key_len, N, r, p, num_keys=1):
     if num_keys == 1:
         return dk
 
-    kol = [dk[idx:idx + key_len]
-           for idx in iter_range(0, key_len * num_keys, key_len)]
-    return kol
+    return [
+        dk[idx : idx + key_len]
+        for idx in iter_range(0, key_len * num_keys, key_len)
+    ]
 
 
 def _bcrypt_encode(data):
@@ -458,9 +457,7 @@ def _bcrypt_decode(data):
 
     bits8 = [ bits[idx:idx+8] for idx in range(0, len(bits), 8) ]
 
-    result = []
-    for g in bits8:
-        result.append(bchr(int(g, 2)))
+    result = [bchr(int(g, 2)) for g in bits8]
     result = b"".join(result)
 
     return result

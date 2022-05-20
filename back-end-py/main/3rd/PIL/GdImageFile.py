@@ -43,7 +43,7 @@ class GdImageFile(ImageFile.ImageFile):
         # Header
         s = self.fp.read(1037)
 
-        if not i16(s[:2]) in [65534, 65535]:
+        if i16(s[:2]) not in [65534, 65535]:
             raise SyntaxError("Not a valid GD 2.x .gd file")
 
         self.mode = "L"  # FIXME: "P"

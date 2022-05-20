@@ -92,12 +92,12 @@ class RsaKey(object):
         """
 
         input_set = set(kwargs.keys())
-        public_set = set(('n', 'e'))
-        private_set = public_set | set(('p', 'q', 'd', 'u'))
+        public_set = {'n', 'e'}
+        private_set = public_set | {'p', 'q', 'd', 'u'}
         if input_set not in (private_set, public_set):
             raise ValueError("Some RSA components are missing")
         for component, value in kwargs.items():
-            setattr(self, "_" + component, value)
+            setattr(self, f"_{component}", value)
         if input_set == private_set:
             self._dp = self._d % (self._p - 1)  # = (e⁻¹) mod (p-1)
             self._dq = self._d % (self._q - 1)  # = (e⁻¹) mod (q-1)
@@ -216,10 +216,7 @@ class RsaKey(object):
         return "RsaKey(n=%d, e=%d%s)" % (int(self._n), int(self._e), extra)
 
     def __str__(self):
-        if self.has_private():
-            key_type = "Private"
-        else:
-            key_type = "Public"
+        key_type = "Private" if self.has_private() else "Public"
         return "%s RSA key at 0x%X" % (key_type, id(self))
 
     def export_key(self, format='PEM', passphrase=None, pkcs=1,
@@ -563,11 +560,7 @@ def construct(rsa_components, consistency_check=True):
             assert ((n % p) == 0)
             q = n // p
 
-        if hasattr(input_comps, 'u'):
-            u = input_comps.u
-        else:
-            u = p.inverse(q)
-
+        u = input_comps.u if hasattr(input_comps, 'u') else p.inverse(q)
         # Build key object
         key = RsaKey(n=n, e=e, d=d, p=p, q=q, u=u)
 
@@ -756,8 +749,7 @@ def import_key(extern_key, passphrase=None):
     if extern_key.startswith(b'-----BEGIN OPENSSH PRIVATE KEY'):
         text_encoded = tostr(extern_key)
         openssh_encoded, marker, enc_flag = PEM.decode(text_encoded, passphrase)
-        result = _import_openssh_private_rsa(openssh_encoded, passphrase)
-        return result
+        return _import_openssh_private_rsa(openssh_encoded, passphrase)
 
     if extern_key.startswith(b'-----'):
         # This is probably a PEM encoded key.

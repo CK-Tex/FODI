@@ -89,11 +89,7 @@ class PSS_SigScheme:
         """
 
         # Set defaults for salt length and mask generation function
-        if self._saltLen is None:
-            sLen = msg_hash.digest_size
-        else:
-            sLen = self._saltLen
-
+        sLen = msg_hash.digest_size if self._saltLen is None else self._saltLen
         if self._mgfunc is None:
             mgf = lambda x, y: MGF1(x, y, msg_hash)
         else:
@@ -109,9 +105,7 @@ class PSS_SigScheme:
         em_int = bytes_to_long(em)
         # Step 2b (RSASP1)
         m_int = self._key._decrypt(em_int)
-        # Step 2c (I2OSP)
-        signature = long_to_bytes(m_int, k)
-        return signature
+        return long_to_bytes(m_int, k)
 
     def verify(self, msg_hash, signature):
         """Check if the  PKCS#1 PSS signature over a message is valid.
@@ -133,15 +127,8 @@ class PSS_SigScheme:
         """
 
         # Set defaults for salt length and mask generation function
-        if self._saltLen is None:
-            sLen = msg_hash.digest_size
-        else:
-            sLen = self._saltLen
-        if self._mgfunc:
-            mgf = self._mgfunc
-        else:
-            mgf = lambda x, y: MGF1(x, y, msg_hash)
-
+        sLen = msg_hash.digest_size if self._saltLen is None else self._saltLen
+        mgf = self._mgfunc or (lambda x, y: MGF1(x, y, msg_hash))
         modBits = Crypto.Util.number.size(self._key.n)
 
         # See 8.1.2 in RFC3447
@@ -223,7 +210,7 @@ def _EMSA_PSS_ENCODE(mhash, emBits, randFunc, mgf, sLen):
 
     # Bitmask of digits that fill up
     lmask = 0
-    for i in iter_range(8*emLen-emBits):
+    for _ in iter_range(8*emLen-emBits):
         lmask = lmask >> 1 | 0x80
 
     # Step 1 and 2 have been already done
@@ -248,9 +235,7 @@ def _EMSA_PSS_ENCODE(mhash, emBits, randFunc, mgf, sLen):
     maskedDB = strxor(db, dbMask)
     # Step 11
     maskedDB = bchr(bord(maskedDB[0]) & ~lmask) + maskedDB[1:]
-    # Step 12
-    em = maskedDB + h.digest() + bchr(0xBC)
-    return em
+    return maskedDB + h.digest() + bchr(0xBC)
 
 
 def _EMSA_PSS_VERIFY(mhash, em, emBits, mgf, sLen):
@@ -285,7 +270,7 @@ def _EMSA_PSS_VERIFY(mhash, em, emBits, mgf, sLen):
 
     # Bitmask of digits that fill up
     lmask = 0
-    for i in iter_range(8*emLen-emBits):
+    for _ in iter_range(8*emLen-emBits):
         lmask = lmask >> 1 | 0x80
 
     # Step 1 and 2 have been already done
@@ -311,10 +296,7 @@ def _EMSA_PSS_VERIFY(mhash, em, emBits, mgf, sLen):
     if not db.startswith(bchr(0)*(emLen-mhash.digest_size-sLen-2) + bchr(1)):
         raise ValueError("Incorrect signature")
     # Step 11
-    if sLen > 0:
-        salt = db[-sLen:]
-    else:
-        salt = b""
+    salt = db[-sLen:] if sLen > 0 else b""
     # Step 12
     m_prime = bchr(0)*8 + mhash.digest() + salt
     # Step 13
@@ -382,5 +364,5 @@ def new(rsa_key, **kwargs):
     if rand_func is None:
         rand_func = Random.get_random_bytes
     if kwargs:
-        raise ValueError("Unknown keywords: " + str(kwargs.keys()))
+        raise ValueError(f"Unknown keywords: {str(kwargs.keys())}")
     return PSS_SigScheme(rsa_key, mask_func, salt_len, rand_func)

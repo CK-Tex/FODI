@@ -43,7 +43,7 @@ def der2pem(der, text='PUBLIC'):
     chunks = [ binascii.b2a_base64(der[i:i+48]) for i in range(0, len(der), 48) ]
     pem  = b('-----BEGIN %s KEY-----\n' % text)
     pem += b('').join(chunks)
-    pem += b('-----END %s KEY-----' % text)
+    pem += b(f'-----END {text} KEY-----')
     return pem
 
 class ImportKeyTests(unittest.TestCase):

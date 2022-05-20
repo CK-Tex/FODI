@@ -205,7 +205,7 @@ class S2V_Tests(unittest.TestCase):
         for module in (AES, DES3):
             s2v = _S2V.new(key, module)
             max_comps = module.block_size*8-1
-            for i in range(max_comps):
+            for _ in range(max_comps):
                 s2v.update(b("XX"))
             self.assertRaises(TypeError, s2v.update, b("YY"))
 
@@ -426,12 +426,11 @@ class scrypt_Tests(unittest.TestCase):
             try:
                 output = scrypt(tv.P, tv.S, tv.dkLen, tv.N, tv.r, tv.p)
             except ValueError as e:
-                if " 2 " in str(e) and tv.N >= 1048576:
-                    import warnings
-                    warnings.warn("Not enough memory to unit test scrypt() with N=1048576", RuntimeWarning)
-                    continue
-                else:
+                if " 2 " not in str(e) or tv.N < 1048576:
                     raise e
+                import warnings
+                warnings.warn("Not enough memory to unit test scrypt() with N=1048576", RuntimeWarning)
+                continue
             self.assertEqual(output, tv.output)
 
     def test3(self):
@@ -481,7 +480,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"", 8, b"zVHmKQtGGQob.b/Nc7l9NO", b"$2a$08$zVHmKQtGGQob.b/Nc7l9NOiLTUh/9MDpX86/DLyEzyiFjqjBFePgO"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -499,7 +498,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"RYoj\\_>2P7", 12, b"esIAHiQAJNNBrsr5V13l7.", b"$2a$12$esIAHiQAJNNBrsr5V13l7.RFWWJI2BZFtQlkFyiWXjou05GyuREZa"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -517,7 +516,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"ptAP\"mcg6oH.\";c0U2_oll.OKi<!ku", 12, b"aroG/pwwPj1tU5fl9a9pkO", b"$2a$12$aroG/pwwPj1tU5fl9a9pkO4rydAmkXRj/LqfHZOSnR6LGAZ.z.jwa"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -530,7 +529,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"Q/A:k3DP;X@=<0\"hg&9c", 6, b"aOK0bWUvLI0qLkc3ti5jyu", b"$2a$06$aOK0bWUvLI0qLkc3ti5jyuAIQoqRzuqoK09kQqQ6Ou/YKDhW50/qa"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -548,7 +547,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"o<&+X'F4AQ8H,LU,N`&r", 12, b"BK5u.QHk1Driey7bvnFTH.", b"$2a$12$BK5u.QHk1Driey7bvnFTH.QM1/nnGe/f5cTzb6XTTi/vMzcAnycqG"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -564,7 +563,7 @@ class bcrypt_Tests(unittest.TestCase):
              6, b"W9zTCl35nEvUukhhFzkKMe", b"$2a$06$W9zTCl35nEvUukhhFzkKMekjT9/pj7M0lihRVEZrX3m8/SBNZRX7i"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -590,7 +589,7 @@ class bcrypt_Tests(unittest.TestCase):
             (b"aaaaaaaaaaaaaaaa", 4, b"5DCebwootqWMCp59ISrMJ.", b"$2a$04$5DCebwootqWMCp59ISrMJ.3prCNHVX1Ws.7Hm2bJxFUnQOX9f7DFa"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -614,7 +613,7 @@ class bcrypt_Tests(unittest.TestCase):
             ("诶比伊艾弗豆贝尔维吾艾尺开艾丝维贼德", 4, b"P4kreGLhCd26d4WIy7DJXu", b"$2a$04$P4kreGLhCd26d4WIy7DJXusPkhxLvBouzV6OXkL5EB0jux0osjsry"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -636,7 +635,7 @@ class bcrypt_Tests(unittest.TestCase):
             ("ZeDRJ:_tu:", 6, b"999999999999999999999u", b"$2a$06$999999999999999999999u6RB0P9UmbdbQgjoQFEJsrvrKe.BoU6q"),
         ]
 
-        for (idx, (password, cost, salt64, result)) in enumerate(tvs):
+        for password, cost, salt64, result in tvs:
             x = bcrypt(password, cost, salt=_bcrypt_decode(salt64))
             self.assertEqual(x, result)
             bcrypt_check(password, result)
@@ -664,7 +663,7 @@ class TestVectorsHKDFWycheproof(unittest.TestCase):
         elif algo_name == "HKDF-SHA-512":
             hash_module = SHA512
         else:
-            raise ValueError("Unknown algorithm " + algo_name)
+            raise ValueError(f"Unknown algorithm {algo_name}")
 
         for group in tv_tree['testGroups']:
 
@@ -700,7 +699,7 @@ class TestVectorsHKDFWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_verify(self, tv):
         self._id = "Wycheproof HKDF Test #%d (%s, %s)" % (tv.id, tv.comment, tv.filename)

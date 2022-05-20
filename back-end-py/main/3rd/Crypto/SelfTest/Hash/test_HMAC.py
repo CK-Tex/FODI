@@ -24,6 +24,7 @@
 
 """Self-test suite for Crypto.Hash.HMAC"""
 
+
 import sys
 import unittest
 from binascii import hexlify
@@ -34,8 +35,10 @@ hash_modules = dict(MD5=MD5, SHA1=SHA1, SHA256=SHA256)
 
 try:
     from Crypto.Hash import SHA224, SHA384, SHA512, RIPEMD160
-    hash_modules.update(dict(SHA224=SHA224, SHA384=SHA384, SHA512=SHA512,
-                             RIPEMD160=RIPEMD160))
+    hash_modules |= dict(
+        SHA224=SHA224, SHA384=SHA384, SHA512=SHA512, RIPEMD160=RIPEMD160
+    )
+
 except ImportError:
     sys.stderr.write("SelfTest: warning: not testing HMAC-SHA224/384/512"
                      " (not available)\n")
@@ -284,7 +287,7 @@ class HMAC_Module_and_Instance_Test(unittest.TestCase):
         for hashname, hashmod in self.hashmods.items():
             if hashmod is None:
                 continue
-            self.description = "Test HMAC in combination with " + hashname
+            self.description = f"Test HMAC in combination with {hashname}"
             one = HMAC.new(key, payload, hashmod).digest()
             two = HMAC.new(key, payload, hashmod.new()).digest()
             self.assertEqual(one, two)

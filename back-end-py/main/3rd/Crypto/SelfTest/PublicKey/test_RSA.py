@@ -192,8 +192,8 @@ class RSATest(unittest.TestCase):
 
     def test_factoring(self):
         rsaObj = self.rsa.construct([self.n, self.e, self.d])
-        self.failUnless(rsaObj.p==self.p or rsaObj.p==self.q)
-        self.failUnless(rsaObj.q==self.p or rsaObj.q==self.q)
+        self.failUnless(rsaObj.p in [self.p, self.q])
+        self.failUnless(rsaObj.q in [self.p, self.q])
         self.failUnless(rsaObj.q*rsaObj.p == self.n)
 
         self.assertRaises(ValueError, self.rsa.construct, [self.n, self.e, self.n-1])

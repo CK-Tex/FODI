@@ -79,9 +79,7 @@ class PKCS115_SigScheme:
         em_int = bytes_to_long(em)
         # Step 2b (RSASP1)
         m_int = self._key._decrypt(em_int)
-        # Step 2c (I2OSP)
-        signature = long_to_bytes(m_int, k)
-        return signature
+        return long_to_bytes(m_int, k)
 
     def verify(self, msg_hash, signature):
         """Check if the  PKCS#1 v1.5 signature over a message is valid.
@@ -135,7 +133,6 @@ class PKCS115_SigScheme:
         #
         if em1 not in possible_em1:
             raise ValueError("Invalid signature")
-        pass
 
 
 def _EMSA_PKCS1_V1_5_ENCODE(msg_hash, emLen, with_hash_parameters=True):

@@ -466,10 +466,7 @@ class EaxFSMTests(unittest.TestCase):
         for method_name in "encrypt", "decrypt":
             for auth_data in (None, b"333", self.data_128,
                               self.data_128 + b"3"):
-                if auth_data is None:
-                    assoc_len = None
-                else:
-                    assoc_len = len(auth_data)
+                assoc_len = None if auth_data is None else len(auth_data)
                 cipher = AES.new(self.key_128, AES.MODE_EAX,
                                  nonce=self.nonce_96)
                 if auth_data is not None:
@@ -485,13 +482,13 @@ class EaxFSMTests(unittest.TestCase):
         cipher = AES.new(self.key_128, AES.MODE_EAX, nonce=self.nonce_96)
         cipher.update(self.data_128)
         first_mac = cipher.digest()
-        for x in range(4):
+        for _ in range(4):
             self.assertEqual(first_mac, cipher.digest())
 
         # Multiple calls to verify
         cipher = AES.new(self.key_128, AES.MODE_EAX, nonce=self.nonce_96)
         cipher.update(self.data_128)
-        for x in range(5):
+        for _ in range(5):
             cipher.verify(first_mac)
 
     def test_valid_encrypt_and_digest_decrypt_and_verify(self):
@@ -687,11 +684,11 @@ class TestVectorsWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_encrypt(self, tv):
-        self._id = "Wycheproof Encrypt EAX Test #" + str(tv.id)
-        
+        self._id = f"Wycheproof Encrypt EAX Test #{str(tv.id)}"
+
         try:
             cipher = AES.new(tv.key, AES.MODE_EAX, tv.iv, mac_len=tv.tag_size)
         except ValueError as e:
@@ -706,8 +703,8 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.warn(tv)
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt EAX Test #" + str(tv.id)
-        
+        self._id = f"Wycheproof Decrypt EAX Test #{str(tv.id)}"
+
         try:
             cipher = AES.new(tv.key, AES.MODE_EAX, tv.iv, mac_len=tv.tag_size)
         except ValueError as e:
@@ -725,7 +722,7 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.warn(tv)
 
     def test_corrupt_decrypt(self, tv):
-        self._id = "Wycheproof Corrupt Decrypt EAX Test #" + str(tv.id)
+        self._id = f"Wycheproof Corrupt Decrypt EAX Test #{str(tv.id)}"
         if len(tv.iv) == 0 or len(tv.ct) < 1:
             return
         cipher = AES.new(tv.key, AES.MODE_EAX, tv.iv, mac_len=tv.tag_size)
@@ -764,15 +761,15 @@ class TestOtherCiphers(unittest.TestCase):
 
 from Crypto.Cipher import DES, DES3, ARC2, CAST, Blowfish
 
-TestOtherCiphers.create_test("DES_" + str(DES.key_size), DES, DES.key_size)
+TestOtherCiphers.create_test(f"DES_{str(DES.key_size)}", DES, DES.key_size)
 for ks in DES3.key_size:
-    TestOtherCiphers.create_test("DES3_" + str(ks), DES3, ks)
+    TestOtherCiphers.create_test(f"DES3_{str(ks)}", DES3, ks)
 for ks in ARC2.key_size:
-    TestOtherCiphers.create_test("ARC2_" + str(ks), ARC2, ks)
+    TestOtherCiphers.create_test(f"ARC2_{str(ks)}", ARC2, ks)
 for ks in CAST.key_size:
-    TestOtherCiphers.create_test("CAST_" + str(ks), CAST, ks)
+    TestOtherCiphers.create_test(f"CAST_{str(ks)}", CAST, ks)
 for ks in Blowfish.key_size:
-    TestOtherCiphers.create_test("Blowfish_" + str(ks), Blowfish, ks)
+    TestOtherCiphers.create_test(f"Blowfish_{str(ks)}", Blowfish, ks)
 
 
 def get_tests(config={}):

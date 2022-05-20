@@ -102,10 +102,7 @@ def _create_base_cipher(dict_parameters):
     stop_operation = _raw_des3_lib.DES3_stop_operation
 
     cipher = VoidPointer()
-    result = start_operation(key,
-                             c_size_t(len(key)),
-                             cipher.address_of())
-    if result:
+    if result := start_operation(key, c_size_t(len(key)), cipher.address_of()):
         raise ValueError("Error %X while instantiating the TDES cipher"
                          % result)
     return SmartPointer(cipher.get(), stop_operation)

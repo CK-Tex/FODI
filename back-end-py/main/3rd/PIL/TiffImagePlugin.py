@@ -325,12 +325,12 @@ class IFDRational(Rational):
             self._val = Fraction(value, denominator)
 
     @property
-    def numerator(a):
-        return a._numerator
+    def numerator(self):
+        return self._numerator
 
     @property
-    def denominator(a):
-        return a._denominator
+    def denominator(self):
+        return self._denominator
 
     def limit_rational(self, max_denominator):
         """
@@ -552,9 +552,8 @@ class ImageFileDirectory_v2(MutableMapping):
                         )
                 elif all(isinstance(v, float) for v in values):
                     self.tagtype[tag] = TiffTags.DOUBLE
-                else:
-                    if all(isinstance(v, str) for v in values):
-                        self.tagtype[tag] = TiffTags.ASCII
+                elif all(isinstance(v, str) for v in values):
+                    self.tagtype[tag] = TiffTags.ASCII
 
         if self.tagtype[tag] == TiffTags.UNDEFINED:
             values = [
@@ -586,9 +585,9 @@ class ImageFileDirectory_v2(MutableMapping):
             except ValueError:
                 # We've got a builtin tag with 1 expected entry
                 warnings.warn(
-                    "Metadata Warning, tag %s had too many entries: %s, expected 1"
-                    % (tag, len(values))
+                    f"Metadata Warning, tag {tag} had too many entries: {len(values)}, expected 1"
                 )
+
                 dest[tag] = values[0]
 
         else:
@@ -633,13 +632,13 @@ class ImageFileDirectory_v2(MutableMapping):
 
         idx, fmt, name = idx_fmt_name
         TYPES[idx] = name
-        size = struct.calcsize("=" + fmt)
-        _load_dispatch[idx] = (  # noqa: F821
-            size,
-            lambda self, data, legacy_api=True: (
-                self._unpack("{}{}".format(len(data) // size, fmt), data)
-            ),
+        size = struct.calcsize(f"={fmt}")
+        _load_dispatch[
+            idx
+        ] = size, lambda self, data, legacy_api=True: self._unpack(
+            f"{len(data) // size}{fmt}", data
         )
+
         _write_dispatch[idx] = lambda self, *values: (  # noqa: F821
             b"".join(self._pack(fmt, value) for value in values)
         )
@@ -732,7 +731,7 @@ class ImageFileDirectory_v2(MutableMapping):
         self._offset = fp.tell()
 
         try:
-            for i in range(self._unpack("H", self._ensure_read(fp, 2))[0]):
+            for _ in range(self._unpack("H", self._ensure_read(fp, 2))[0]):
                 tag, typ, count, data = self._unpack("HHL4s", self._ensure_read(fp, 12))
                 if DEBUG:
                     tagname = TiffTags.lookup(tag).name
@@ -753,10 +752,7 @@ class ImageFileDirectory_v2(MutableMapping):
                     here = fp.tell()
                     (offset,) = self._unpack("L", data)
                     if DEBUG:
-                        print(
-                            "Tag Location: {} - Data Location: {}".format(here, offset),
-                            end=" ",
-                        )
+                        print(f"Tag Location: {here} - Data Location: {offset}", end=" ")
                     fp.seek(offset)
                     data = ImageFile._safe_read(fp, size)
                     fp.seek(here)
@@ -803,7 +799,7 @@ class ImageFileDirectory_v2(MutableMapping):
                 stripoffsets = len(entries)
             typ = self.tagtype.get(tag)
             if DEBUG:
-                print("Tag {}, Type: {}, Value: {}".format(tag, typ, value))
+                print(f"Tag {tag}, Type: {typ}, Value: {value}")
             values = value if isinstance(value, tuple) else (value,)
             data = self._write_dispatch[typ](self, *values)
             if DEBUG:
@@ -871,8 +867,8 @@ ImageFileDirectory_v2._load_dispatch = _load_dispatch
 ImageFileDirectory_v2._write_dispatch = _write_dispatch
 for idx, name in TYPES.items():
     name = name.replace(" ", "_")
-    setattr(ImageFileDirectory_v2, "load_" + name, _load_dispatch[idx][1])
-    setattr(ImageFileDirectory_v2, "write_" + name, _write_dispatch[idx])
+    setattr(ImageFileDirectory_v2, f"load_{name}", _load_dispatch[idx][1])
+    setattr(ImageFileDirectory_v2, f"write_{name}", _write_dispatch[idx])
 del _load_dispatch, _write_dispatch, idx, name
 
 
@@ -1037,16 +1033,16 @@ class TiffImageFile(ImageFile.ImageFile):
                 raise EOFError("no more images in TIFF file")
             if DEBUG:
                 print(
-                    "Seeking to frame %s, on frame %s, __next %s, location: %s"
-                    % (frame, self.__frame, self.__next, self.fp.tell())
+                    f"Seeking to frame {frame}, on frame {self.__frame}, __next {self.__next}, location: {self.fp.tell()}"
                 )
+
             # reset buffered io handle in case fp
             # was passed to libtiff, invalidating the buffer
             self.fp.tell()
             self.fp.seek(self.__next)
             self._frame_pos.append(self.__next)
             if DEBUG:
-                print("Loading tags, location: %s" % self.fp.tell())
+                print(f"Loading tags, location: {self.fp.tell()}")
             self.tag_v2.load(self.fp)
             self.__next = self.tag_v2.next
             if self.__next == 0:
@@ -1066,9 +1062,7 @@ class TiffImageFile(ImageFile.ImageFile):
         return self.__frame
 
     def load(self):
-        if self.use_load_libtiff:
-            return self._load_libtiff()
-        return super().load()
+        return self._load_libtiff() if self.use_load_libtiff else super().load()
 
     def load_end(self):
         if self._tile_orientation:
@@ -1103,7 +1097,7 @@ class TiffImageFile(ImageFile.ImageFile):
 
         self.load_prepare()
 
-        if not len(self.tile) == 1:
+        if len(self.tile) != 1:
             raise OSError("Not exactly one tile")
 
         # (self._compression, (extents tuple),
@@ -1338,11 +1332,7 @@ class TiffImageFile(ImageFile.ImageFile):
                 h = self.tag_v2.get(323)
 
             for offset in offsets:
-                if x + w > xsize:
-                    stride = w * sum(bps_tuple) / 8  # bytes per line
-                else:
-                    stride = 0
-
+                stride = w * sum(bps_tuple) / 8 if x + w > xsize else 0
                 tile_rawmode = rawmode
                 if self._planar_configuration == 2:
                     # each band on it's own layer

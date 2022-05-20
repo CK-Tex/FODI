@@ -255,11 +255,8 @@ def make_hash_tests(module, module_name, test_data, digest_size, oid=None,
     tests = []
     for i in range(len(test_data)):
         row = test_data[i]
-        (expected, input) = map(tobytes,row[0:2])
-        if len(row) < 3:
-            description = repr(input)
-        else:
-            description = row[2]
+        (expected, input) = map(tobytes, row[:2])
+        description = repr(input) if len(row) < 3 else row[2]
         name = "%s #%d: %s" % (module_name, i+1, description)
         tests.append(HashSelfTest(module, name, expected, input, extra_params))
 
@@ -271,7 +268,7 @@ def make_hash_tests(module, module_name, test_data, digest_size, oid=None,
 
     tests.append(ByteArrayTest(module, extra_params))
 
-    if not (sys.version_info[0] == 2 and sys.version_info[1] < 7):
+    if sys.version_info[0] != 2 or sys.version_info[1] >= 7:
         tests.append(MemoryViewTest(module, extra_params))
 
     return tests

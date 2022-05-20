@@ -49,7 +49,7 @@ from Crypto.Util._file_system import pycryptodome_filename
 
 
 def load_hash_by_name(hash_name):
-    return __import__("Crypto.Hash." + hash_name, globals(), locals(), ["new"])
+    return __import__(f"Crypto.Hash.{hash_name}", globals(), locals(), ["new"])
 
 
 class PRNG(object):
@@ -268,7 +268,7 @@ def get_hash_module(hash_name):
     elif hash_name == "SHA-1":
         hash_module = SHA1
     else:
-        raise ValueError("Unknown hash algorithm: " + hash_name)
+        raise ValueError(f"Unknown hash algorithm: {hash_name}")
     return hash_module
 
 
@@ -334,7 +334,7 @@ class TestVectorsPSSWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_verify(self, tv):
         self._id = "Wycheproof RSA PSS Test #%d (%s)" % (tv.id, tv.comment)

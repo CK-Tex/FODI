@@ -394,11 +394,11 @@ class TestVectorsWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_create_mac(self, tv):
-        self._id = "Wycheproof MAC creation Test #" + str(tv.id)
-        
+        self._id = f"Wycheproof MAC creation Test #{str(tv.id)}"
+
         try:
             tag = CMAC.new(tv.key, tv.msg, ciphermod=AES, mac_len=tv.tag_size).digest()
         except ValueError as e:
@@ -410,8 +410,8 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.warn(tv)
 
     def test_verify_mac(self, tv):
-        self._id = "Wycheproof MAC verification Test #" + str(tv.id)
-       
+        self._id = f"Wycheproof MAC verification Test #{str(tv.id)}"
+
         try:
             mac = CMAC.new(tv.key, tv.msg, ciphermod=AES, mac_len=tv.tag_size)
         except ValueError as e:

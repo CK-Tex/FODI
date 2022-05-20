@@ -160,7 +160,7 @@ Image.register_decoder("MSP", MspDecoder)
 def _save(im, fp, filename):
 
     if im.mode != "1":
-        raise OSError("cannot write mode %s as MSP" % im.mode)
+        raise OSError(f"cannot write mode {im.mode} as MSP")
 
     # create MSP header
     header = [0] * 16

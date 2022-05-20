@@ -69,7 +69,7 @@ class SimpleTest(unittest.TestCase):
             self.assertEqual(start <= y < stop, True)
             self.assertEqual((x - start) % step, 0)
             self.assertEqual((y - start) % step, 0)
-        for i in range(10):
+        for _ in range(10):
             self.assertEqual(random.randrange(1,2), 1)
         self.assertRaises(ValueError, random.randrange, start, start)
         self.assertRaises(ValueError, random.randrange, stop, start, step)
@@ -84,7 +84,7 @@ class SimpleTest(unittest.TestCase):
         self.assertNotEqual(x, y)
         self.assertEqual(start <= x <= stop, True)
         self.assertEqual(start <= y <= stop, True)
-        for i in range(10):
+        for _ in range(10):
             self.assertEqual(random.randint(1,1), 1)
         self.assertRaises(ValueError, random.randint, stop, start)
         self.assertRaises(TypeError, random.randint, start, stop, step)
@@ -97,7 +97,7 @@ class SimpleTest(unittest.TestCase):
         self.assertNotEqual(x, y)
         self.assertEqual(x in seq, True)
         self.assertEqual(y in seq, True)
-        for i in range(10):
+        for _ in range(10):
             self.assertEqual(random.choice((1,2,3)) in (1,2,3), True)
         self.assertEqual(random.choice([1,2,3]) in [1,2,3], True)
         if sys.version_info[0] == 3:
@@ -131,10 +131,6 @@ class SimpleTest(unittest.TestCase):
         self.assertRaises(TypeError, random.shuffle, 1)
         self.assertRaises(TypeError, random.shuffle, "11")
         self.assertRaises(TypeError, random.shuffle, (1,2))
-        # 2to3 wraps a list() around it, alas - but I want to shoot
-        # myself in the foot here! :D
-        # if sys.version_info[0] == 3:
-            # self.assertRaises(TypeError, random.shuffle, range(3))
         # Test sample
         x = random.sample(seq, 20)
         y = random.sample(seq, 20)

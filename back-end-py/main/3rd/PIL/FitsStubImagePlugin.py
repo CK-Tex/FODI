@@ -53,8 +53,7 @@ class FITSStubImageFile(ImageFile.StubImageFile):
         self.mode = "F"
         self._size = 1, 1
 
-        loader = self._load()
-        if loader:
+        if loader := self._load():
             loader.open(self)
 
     def _load(self):

@@ -225,10 +225,7 @@ class ElGamalKey(object):
     def has_private(self):
         """Whether this is an ElGamal private key"""
 
-        if hasattr(self, 'x'):
-            return 1
-        else:
-            return 0
+        return 1 if hasattr(self, 'x') else 0
 
     def can_encrypt(self):
         return True

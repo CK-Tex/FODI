@@ -76,11 +76,7 @@ class PsdImageFile(ImageFile.ImageFile):
         self.mode = mode
         self._size = i32(s[18:]), i32(s[14:])
 
-        #
-        # color mode data
-
-        size = i32(read(4))
-        if size:
+        if size := i32(read(4)):
             data = read(size)
             if mode == "P" and size == 768:
                 self.palette = ImagePalette.raw("RGB;L", data)
@@ -90,8 +86,7 @@ class PsdImageFile(ImageFile.ImageFile):
 
         self.resources = []
 
-        size = i32(read(4))
-        if size:
+        if size := i32(read(4)):
             # load resources
             end = self.fp.tell() + size
             while self.fp.tell() < end:
@@ -112,11 +107,9 @@ class PsdImageFile(ImageFile.ImageFile):
 
         self.layers = []
 
-        size = i32(read(4))
-        if size:
+        if size := i32(read(4)):
             end = self.fp.tell() + size
-            size = i32(read(4))
-            if size:
+            if size := i32(read(4)):
                 self.layers = _layerinfo(self.fp)
             self.fp.seek(end)
 
@@ -197,11 +190,7 @@ def _layerinfo(file):
         for i in types:
             type = i16(read(2))
 
-            if type == 65535:
-                m = "A"
-            else:
-                m = "RGBA"[type]
-
+            m = "A" if type == 65535 else "RGBA"[type]
             mode.append(m)
             size = i32(read(4))
             info.append((m, size))
@@ -220,14 +209,13 @@ def _layerinfo(file):
         # skip over blend flags and extra information
         read(12)  # filler
         name = ""
-        size = i32(read(4))  # length of the extra data field
-        combined = 0
-        if size:
+        if size := i32(read(4)):
             data_end = file.tell() + size
 
             length = i32(read(4))
             if length:
                 file.seek(length - 16, io.SEEK_CUR)
+            combined = 0
             combined += length + 4
 
             length = i32(read(4))
@@ -245,17 +233,12 @@ def _layerinfo(file):
             file.seek(data_end)
         layers.append((name, mode, (x0, y0, x1, y1)))
 
-    # get tiles
-    i = 0
-    for name, mode, bbox in layers:
+    for i, (name, mode, bbox) in enumerate(layers):
         tile = []
         for m in mode:
-            t = _maketile(file, m, bbox, 1)
-            if t:
+            if t := _maketile(file, m, bbox, 1):
                 tile.extend(t)
         layers[i] = name, mode, bbox, tile
-        i += 1
-
     return layers
 
 
@@ -294,7 +277,7 @@ def _maketile(file, mode, bbox, channels):
             if mode == "CMYK":
                 layer += ";I"
             tile.append(("packbits", bbox, offset, layer))
-            for y in range(ysize):
+            for _ in range(ysize):
                 offset = offset + i16(bytecount[i : i + 2])
                 i += 2
 

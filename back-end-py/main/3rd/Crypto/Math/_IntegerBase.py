@@ -367,7 +367,7 @@ class IntegerBase(ABC):
         randfunc = kwargs.pop("randfunc", None)
 
         if kwargs:
-            raise ValueError("Unknown keywords: " + str(kwargs.keys))
+            raise ValueError(f"Unknown keywords: {str(kwargs.keys)}")
         if None not in (max_inclusive, max_exclusive):
             raise ValueError("max_inclusive and max_exclusive cannot be both"
                          " specified")

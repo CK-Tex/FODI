@@ -34,7 +34,7 @@ class StrongRandom(object):
             self._randfunc = None
         elif randfunc is not None and rng is None:
             self._randfunc = randfunc
-        elif randfunc is None and rng is not None:
+        elif randfunc is None:
             self._randfunc = rng.read
         else:
             raise ValueError("Cannot specify both 'rng' and 'randfunc'")
@@ -68,8 +68,7 @@ class StrongRandom(object):
             raise ValueError("randrange step argument must not be zero")
 
         num_choices = ceil_div(stop - start, step)
-        if num_choices < 0:
-            num_choices = 0
+        num_choices = max(num_choices, 0)
         if num_choices < 1:
             raise ValueError("empty range for randrange(%r, %r, %r)" % (start, stop, step))
 
@@ -116,7 +115,7 @@ class StrongRandom(object):
 
         retval = []
         selected = {}  # we emulate a set using a dict here
-        for i in range(k):
+        for _ in range(k):
             r = None
             while r is None or r in selected:
                 r = self.randrange(num_choices)

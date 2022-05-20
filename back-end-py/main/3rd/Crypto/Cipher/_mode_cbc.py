@@ -93,11 +93,12 @@ class CbcMode(object):
         """
 
         self._state = VoidPointer()
-        result = raw_cbc_lib.CBC_start_operation(block_cipher.get(),
-                                                 c_uint8_ptr(iv),
-                                                 c_size_t(len(iv)),
-                                                 self._state.address_of())
-        if result:
+        if result := raw_cbc_lib.CBC_start_operation(
+            block_cipher.get(),
+            c_uint8_ptr(iv),
+            c_size_t(len(iv)),
+            self._state.address_of(),
+        ):
             raise ValueError("Error %d while instantiating the CBC mode"
                              % result)
 
@@ -161,32 +162,30 @@ class CbcMode(object):
         if self.encrypt not in self._next:
             raise TypeError("encrypt() cannot be called after decrypt()")
         self._next = [ self.encrypt ]
-        
+
         if output is None:
             ciphertext = create_string_buffer(len(plaintext))
         else:
             ciphertext = output
-            
+
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-        
+
             if len(plaintext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_cbc_lib.CBC_encrypt(self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := raw_cbc_lib.CBC_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             if result == 3:
                 raise ValueError("Data must be padded to %d byte boundary in CBC mode" % self.block_size)
             raise ValueError("Error %d while encrypting in CBC mode" % result)
 
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext, output=None):
         """Decrypt data with the key and the parameters set at initialization.
@@ -224,7 +223,7 @@ class CbcMode(object):
         if self.decrypt not in self._next:
             raise TypeError("decrypt() cannot be called after encrypt()")
         self._next = [ self.decrypt ]
-        
+
         if output is None:
             plaintext = create_string_buffer(len(ciphertext))
         else:
@@ -232,24 +231,22 @@ class CbcMode(object):
 
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-            
+
             if len(ciphertext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_cbc_lib.CBC_decrypt(self._state.get(),
-                                         c_uint8_ptr(ciphertext),
-                                         c_uint8_ptr(plaintext),
-                                         c_size_t(len(ciphertext)))
-        if result:
+        if result := raw_cbc_lib.CBC_decrypt(
+            self._state.get(),
+            c_uint8_ptr(ciphertext),
+            c_uint8_ptr(plaintext),
+            c_size_t(len(ciphertext)),
+        ):
             if result == 3:
                 raise ValueError("Data must be padded to %d byte boundary in CBC mode" % self.block_size)
             raise ValueError("Error %d while decrypting in CBC mode" % result)
 
-        if output is None:
-            return get_raw_buffer(plaintext)
-        else:
-            return None
+        return get_raw_buffer(plaintext) if output is None else None
 
 
 def _create_cbc_cipher(factory, **kwargs):
@@ -277,17 +274,16 @@ def _create_cbc_cipher(factory, **kwargs):
 
     if (None, None) == (iv, IV):
         iv = get_random_bytes(factory.block_size)
-    if iv is not None:
-        if IV is not None:
-            raise TypeError("You must either use 'iv' or 'IV', not both")
-    else:
+    if iv is None:
         iv = IV
 
+    elif IV is not None:
+        raise TypeError("You must either use 'iv' or 'IV', not both")
     if len(iv) != factory.block_size:
         raise ValueError("Incorrect IV length (it must be %d bytes long)" %
                 factory.block_size)
 
     if kwargs:
-        raise TypeError("Unknown parameters for CBC: %s" % str(kwargs))
+        raise TypeError(f"Unknown parameters for CBC: {str(kwargs)}")
 
     return CbcMode(cipher_state, iv)

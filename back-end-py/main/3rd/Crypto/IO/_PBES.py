@@ -372,10 +372,7 @@ class PBES2(object):
             salt = DerOctetString().decode(scrypt_params[0]).payload
             iteration_count, scrypt_r, scrypt_p = [scrypt_params[x]
                                                    for x in (1, 2, 3)]
-            if len(scrypt_params) > 4:
-                kdf_key_length = scrypt_params[4]
-            else:
-                kdf_key_length = None
+            kdf_key_length = scrypt_params[4] if len(scrypt_params) > 4 else None
         else:
             raise PbesError("Unsupported PBES2 KDF")
 
@@ -421,7 +418,7 @@ class PBES2(object):
             elif pbkdf2_prf_oid == _OID_HMAC_SHA512:
                 hmac_hash_module = SHA512
             else:
-                raise PbesError("Unsupported HMAC %s" % pbkdf2_prf_oid)
+                raise PbesError(f"Unsupported HMAC {pbkdf2_prf_oid}")
 
             key = PBKDF2(passphrase, salt, key_size, iteration_count,
                          hmac_hash_module=hmac_hash_module)

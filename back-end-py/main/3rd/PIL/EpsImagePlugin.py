@@ -40,12 +40,14 @@ gs_windows_binary = None
 if sys.platform.startswith("win"):
     import shutil
 
-    for binary in ("gswin32c", "gswin64c", "gs"):
-        if shutil.which(binary) is not None:
-            gs_windows_binary = binary
-            break
-    else:
-        gs_windows_binary = False
+    gs_windows_binary = next(
+        (
+            binary
+            for binary in ("gswin32c", "gswin64c", "gs")
+            if shutil.which(binary) is not None
+        ),
+        False,
+    )
 
 
 def has_ghostscript():
@@ -90,10 +92,7 @@ def Ghostscript(tile, size, fp, scale=1):
         os.close(in_fd)
         infile = infile_temp
 
-        # Ignore length and offset!
-        # Ghostscript can read it
-        # Copy whole file to read in Ghostscript
-        with open(infile_temp, "wb") as f:
+        with open(infile, "wb") as f:
             # fetch length of fp
             fp.seek(0, io.SEEK_END)
             fsize = fp.tell()
@@ -111,23 +110,22 @@ def Ghostscript(tile, size, fp, scale=1):
     # Build Ghostscript command
     command = [
         "gs",
-        "-q",  # quiet mode
-        "-g%dx%d" % size,  # set output geometry (pixels)
-        "-r%fx%f" % res,  # set input DPI (dots per inch)
-        "-dBATCH",  # exit after processing
-        "-dNOPAUSE",  # don't pause between pages
-        "-dSAFER",  # safe mode
-        "-sDEVICE=ppmraw",  # ppm driver
-        "-sOutputFile=%s" % outfile,  # output file
-        # adjust for image origin
+        "-q",
+        "-g%dx%d" % size,
+        "-r%fx%f" % res,
+        "-dBATCH",
+        "-dNOPAUSE",
+        "-dSAFER",
+        "-sDEVICE=ppmraw",
+        f"-sOutputFile={outfile}",
         "-c",
         "%d %d translate" % (-bbox[0], -bbox[1]),
         "-f",
-        infile,  # input file
-        # showpage (see https://bugs.ghostscript.com/show_bug.cgi?id=698272)
+        infile,
         "-c",
         "showpage",
     ]
+
 
     if gs_windows_binary is not None:
         if not gs_windows_binary:
@@ -250,23 +248,17 @@ class EpsImageFile(ImageFile.ImageFile):
                         except Exception:
                             pass
 
-                else:
-                    m = field.match(s)
-                    if m:
-                        k = m.group(1)
+                elif m := field.match(s):
+                    k = m.group(1)
 
-                        if k == "EndComments":
-                            break
-                        if k[:8] == "PS-Adobe":
-                            self.info[k[:8]] = k[9:]
-                        else:
-                            self.info[k] = ""
-                    elif s[0] == "%":
-                        # handle non-DSC Postscript comments that some
-                        # tools mistakenly put in the Comments section
-                        pass
+                    if k == "EndComments":
+                        break
+                    if k[:8] == "PS-Adobe":
+                        self.info[k[:8]] = k[9:]
                     else:
-                        raise OSError("bad EPS header")
+                        self.info[k] = ""
+                elif s[0] != "%":
+                    raise OSError("bad EPS header")
 
             s_raw = fp.readline()
             s = s_raw.strip("\r\n")
@@ -312,7 +304,7 @@ class EpsImageFile(ImageFile.ImageFile):
             fp.seek(0, io.SEEK_END)
             length = fp.tell()
             offset = 0
-        elif i32(s[0:4]) == 0xC6D3D0C5:
+        elif i32(s[:4]) == 0xC6D3D0C5:
             # FIX for: Some EPS file not handled correctly / issue #302
             # EPS can contain binary data
             # or start directly with latin coding

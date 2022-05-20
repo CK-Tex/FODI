@@ -66,20 +66,17 @@ class CipherSelfTest(unittest.TestCase):
 
         if mode is not None:
             # Block cipher
-            self.mode = getattr(self.module, "MODE_" + mode)
+            self.mode = getattr(self.module, f"MODE_{mode}")
 
             self.iv = _extract(params, 'iv', None)
             if self.iv is None:
                 self.iv = _extract(params, 'nonce', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
-
         else:
             # Stream cipher
             self.mode = None
             self.iv = _extract(params, 'iv', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
+        if self.iv is not None:
+            self.iv = b(self.iv)
 
         self.extra_params = params
 
@@ -90,18 +87,18 @@ class CipherSelfTest(unittest.TestCase):
         params = self.extra_params.copy()
         key = a2b_hex(self.key)
 
-        old_style = []
-        if self.mode is not None:
-            old_style = [ self.mode ]
+        old_style = [ self.mode ] if self.mode is not None else []
         if self.iv is not None:
             old_style += [ a2b_hex(self.iv) ]
 
         return self.module.new(key, *old_style, **params)
 
     def isMode(self, name):
-        if not hasattr(self.module, "MODE_"+name):
-            return False
-        return self.mode == getattr(self.module, "MODE_"+name)
+        return (
+            self.mode == getattr(self.module, f"MODE_{name}")
+            if hasattr(self.module, f"MODE_{name}")
+            else False
+        )
 
     def runTest(self):
         plaintext = a2b_hex(self.plaintext)
@@ -117,7 +114,7 @@ class CipherSelfTest(unittest.TestCase):
         # Repeat the same encryption or decryption twice and verify
         # that the result is always the same
         #
-        for i in range(2):
+        for _ in range(2):
             cipher = self._new()
             decipher = self._new()
 
@@ -147,28 +144,20 @@ class CipherStreamingSelfTest(CipherSelfTest):
     def shortDescription(self):
         desc = self.module_name
         if self.mode is not None:
-            desc += " in %s mode" % (self.mode_name,)
-        return "%s should behave like a stream cipher" % (desc,)
+            desc += f" in {self.mode_name} mode"
+        return f"{desc} should behave like a stream cipher"
 
     def runTest(self):
         plaintext = a2b_hex(self.plaintext)
         ciphertext = a2b_hex(self.ciphertext)
 
-        # The cipher should work like a stream cipher
-
-        # Test counter mode encryption, 3 bytes at a time
-        ct3 = []
         cipher = self._new()
-        for i in range(0, len(plaintext), 3):
-            ct3.append(cipher.encrypt(plaintext[i:i+3]))
+        ct3 = [cipher.encrypt(plaintext[i:i+3]) for i in range(0, len(plaintext), 3)]
         ct3 = b2a_hex(b("").join(ct3))
         self.assertEqual(self.ciphertext, ct3)  # encryption (3 bytes at a time)
 
-        # Test counter mode decryption, 3 bytes at a time
-        pt3 = []
         cipher = self._new()
-        for i in range(0, len(ciphertext), 3):
-            pt3.append(cipher.encrypt(ciphertext[i:i+3]))
+        pt3 = [cipher.encrypt(ciphertext[i:i+3]) for i in range(0, len(ciphertext), 3)]
         # PY3K: This is meant to be text, do not change to bytes (data)
         pt3 = b2a_hex(b("").join(pt3))
         self.assertEqual(self.plaintext, pt3)  # decryption (3 bytes at a time)
@@ -185,7 +174,7 @@ class RoundtripTest(unittest.TestCase):
         self.module_name = params.get('module_name', None)
 
     def shortDescription(self):
-        return """%s .decrypt() output of .encrypt() should not be garbled""" % (self.module_name,)
+        return f"""{self.module_name} .decrypt() output of .encrypt() should not be garbled"""
 
     def runTest(self):
 
@@ -249,29 +238,24 @@ class ByteArrayTest(unittest.TestCase):
 
         if mode is not None:
             # Block cipher
-            self.mode = getattr(self.module, "MODE_" + mode)
+            self.mode = getattr(self.module, f"MODE_{mode}")
 
             self.iv = _extract(params, 'iv', None)
             if self.iv is None:
                 self.iv = _extract(params, 'nonce', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
         else:
             # Stream cipher
             self.mode = None
             self.iv = _extract(params, 'iv', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
-
+        if self.iv is not None:
+            self.iv = b(self.iv)
         self.extra_params = params
 
     def _new(self):
         params = self.extra_params.copy()
         key = a2b_hex(self.key)
 
-        old_style = []
-        if self.mode is not None:
-            old_style = [ self.mode ]
+        old_style = [ self.mode ] if self.mode is not None else []
         if self.iv is not None:
             old_style += [ a2b_hex(self.iv) ]
 
@@ -329,29 +313,24 @@ class MemoryviewTest(unittest.TestCase):
 
         if mode is not None:
             # Block cipher
-            self.mode = getattr(self.module, "MODE_" + mode)
+            self.mode = getattr(self.module, f"MODE_{mode}")
 
             self.iv = _extract(params, 'iv', None)
             if self.iv is None:
                 self.iv = _extract(params, 'nonce', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
         else:
             # Stream cipher
             self.mode = None
             self.iv = _extract(params, 'iv', None)
-            if self.iv is not None:
-                self.iv = b(self.iv)
-
+        if self.iv is not None:
+            self.iv = b(self.iv)
         self.extra_params = params
 
     def _new(self):
         params = self.extra_params.copy()
         key = a2b_hex(self.key)
 
-        old_style = []
-        if self.mode is not None:
-            old_style = [ self.mode ]
+        old_style = [ self.mode ] if self.mode is not None else []
         if self.iv is not None:
             old_style += [ a2b_hex(self.iv) ]
 
@@ -405,11 +384,11 @@ def make_block_tests(module, module_name, test_data, additional_params=dict()):
             (params['plaintext'], params['ciphertext'], params['key'], params['description']) = row
         elif len(row) == 5:
             (params['plaintext'], params['ciphertext'], params['key'], params['description'], extra_params) = row
-            params.update(extra_params)
+            params |= extra_params
         else:
             raise AssertionError("Unsupported tuple size %d" % (len(row),))
 
-        if not "mode" in params:
+        if "mode" not in params:
             params["mode"] = "ECB"
 
         # Build the display-name for the test
@@ -423,13 +402,13 @@ def make_block_tests(module, module_name, test_data, additional_params=dict()):
         if p_description is not None:
             description = p_description
         elif p_mode == 'ECB' and not p2:
-            description = "p=%s, k=%s" % (p_plaintext, p_key)
+            description = f"p={p_plaintext}, k={p_key}"
         else:
             description = "p=%s, k=%s, %r" % (p_plaintext, p_key, p2)
         name = "%s #%d: %s" % (module_name, i+1, description)
         params['description'] = name
         params['module_name'] = module_name
-        params.update(additional_params)
+        params |= additional_params
 
         # Add extra test(s) to the test suite before the current test
         if not extra_tests_added:
@@ -460,7 +439,7 @@ def make_stream_tests(module, module_name, test_data):
             (params['plaintext'], params['ciphertext'], params['key'], params['description']) = row
         elif len(row) == 5:
             (params['plaintext'], params['ciphertext'], params['key'], params['description'], extra_params) = row
-            params.update(extra_params)
+            params |= extra_params
         else:
             raise AssertionError("Unsupported tuple size %d" % (len(row),))
 
@@ -474,7 +453,7 @@ def make_stream_tests(module, module_name, test_data):
         if p_description is not None:
             description = p_description
         elif not p2:
-            description = "p=%s, k=%s" % (p_plaintext, p_key)
+            description = f"p={p_plaintext}, k={p_key}"
         else:
             description = "p=%s, k=%s, %r" % (p_plaintext, p_key, p2)
         name = "%s #%d: %s" % (module_name, i+1, description)

@@ -505,11 +505,7 @@ class Poly1305_Basic(object):
     def new(key, *data, **kwds):
         from Crypto.Hash.Poly1305 import Poly1305_MAC
 
-        if len(data) == 1:
-            msg = data[0]
-        else:
-            msg = None
-
+        msg = data[0] if len(data) == 1 else None
         return Poly1305_MAC(key[:16], key[16:], msg)
 
 

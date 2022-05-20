@@ -32,10 +32,7 @@ from Crypto.SelfTest.st_common import list_test_cases, a2b_hex, b2a_hex
 
 def _sws(s):
     """Remove whitespace from a text or byte string"""
-    if isinstance(s,str):
-        return "".join(s.split())
-    else:
-        return b("").join(s.split())
+    return "".join(s.split()) if isinstance(s,str) else b("").join(s.split())
 
 class DSATest(unittest.TestCase):
     # Test vector from "Appendix 5. Example of the DSA" of

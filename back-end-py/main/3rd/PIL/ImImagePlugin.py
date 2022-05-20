@@ -86,16 +86,16 @@ OPEN = {
 
 # ifunc95 extensions
 for i in ["8", "8S", "16", "16S", "32", "32F"]:
-    OPEN["L %s image" % i] = ("F", "F;%s" % i)
-    OPEN["L*%s image" % i] = ("F", "F;%s" % i)
+    OPEN[f"L {i} image"] = "F", f"F;{i}"
+    OPEN[f"L*{i} image"] = "F", f"F;{i}"
 for i in ["16", "16L", "16B"]:
-    OPEN["L %s image" % i] = ("I;%s" % i, "I;%s" % i)
-    OPEN["L*%s image" % i] = ("I;%s" % i, "I;%s" % i)
+    OPEN[f"L {i} image"] = f"I;{i}", f"I;{i}"
+    OPEN[f"L*{i} image"] = f"I;{i}", f"I;{i}"
 for i in ["32S"]:
-    OPEN["L %s image" % i] = ("I", "I;%s" % i)
-    OPEN["L*%s image" % i] = ("I", "I;%s" % i)
+    OPEN[f"L {i} image"] = "I", f"I;{i}"
+    OPEN[f"L*{i} image"] = "I", f"I;{i}"
 for i in range(2, 33):
-    OPEN["L*%s image" % i] = ("F", "F;%s" % i)
+    OPEN[f"L*{i} image"] = "F", f"F;{i}"
 
 
 # --------------------------------------------------------------------
@@ -166,42 +166,39 @@ class ImImageFile(ImageFile.ImageFile):
             except re.error:
                 raise SyntaxError("not an IM file")
 
-            if m:
-
-                k, v = m.group(1, 2)
-
-                # Don't know if this is the correct encoding,
-                # but a decent guess (I guess)
-                k = k.decode("latin-1", "replace")
-                v = v.decode("latin-1", "replace")
-
-                # Convert value as appropriate
-                if k in [FRAMES, SCALE, SIZE]:
-                    v = v.replace("*", ",")
-                    v = tuple(map(number, v.split(",")))
-                    if len(v) == 1:
-                        v = v[0]
-                elif k == MODE and v in OPEN:
-                    v, self.rawmode = OPEN[v]
-
-                # Add to dictionary. Note that COMMENT tags are
-                # combined into a list of strings.
-                if k == COMMENT:
-                    if k in self.info:
-                        self.info[k].append(v)
-                    else:
-                        self.info[k] = [v]
-                else:
-                    self.info[k] = v
-
-                if k in TAGS:
-                    n += 1
-
-            else:
-
+            if not m:
                 raise SyntaxError(
                     "Syntax error in IM header: " + s.decode("ascii", "replace")
                 )
+
+            k, v = m.group(1, 2)
+
+            # Don't know if this is the correct encoding,
+            # but a decent guess (I guess)
+            k = k.decode("latin-1", "replace")
+            v = v.decode("latin-1", "replace")
+
+            # Convert value as appropriate
+            if k in [FRAMES, SCALE, SIZE]:
+                v = v.replace("*", ",")
+                v = tuple(map(number, v.split(",")))
+                if len(v) == 1:
+                    v = v[0]
+            elif k == MODE and v in OPEN:
+                v, self.rawmode = OPEN[v]
+
+            # Add to dictionary. Note that COMMENT tags are
+            # combined into a list of strings.
+            if k == COMMENT:
+                if k in self.info:
+                    self.info[k].append(v)
+                else:
+                    self.info[k] = [v]
+            else:
+                self.info[k] = v
+
+            if k in TAGS:
+                n += 1
 
         if not n:
             raise SyntaxError("Not an IM file")
@@ -211,7 +208,7 @@ class ImImageFile(ImageFile.ImageFile):
         self.mode = self.info[MODE]
 
         # Skip forward to start of image data
-        while s and s[0:1] != b"\x1A":
+        while s and s[:1] != b"\x1A":
             s = self.fp.read(1)
         if not s:
             raise SyntaxError("File truncated")
@@ -287,11 +284,7 @@ class ImImageFile(ImageFile.ImageFile):
 
         self.frame = frame
 
-        if self.mode == "1":
-            bits = 1
-        else:
-            bits = 8 * len(self.mode)
-
+        bits = 1 if self.mode == "1" else 8 * len(self.mode)
         size = ((self.size[0] * bits + 7) // 8) * self.size[1]
         offs = self.__offset + frame * size
 
@@ -342,7 +335,7 @@ def _save(im, fp, filename):
     try:
         image_type, rawmode = SAVE[im.mode]
     except KeyError:
-        raise ValueError("Cannot save %s images as IM" % im.mode)
+        raise ValueError(f"Cannot save {im.mode} images as IM")
 
     frames = im.encoderinfo.get("frames", 1)
 

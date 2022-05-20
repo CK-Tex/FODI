@@ -72,7 +72,7 @@ class FliImageFile(ImageFile.ImageFile):
 
         if i16(s[4:6]) == 0xF100:
             # prefix chunk; ignore it
-            self.__offset = self.__offset + i32(s)
+            self.__offset += i32(s)
             s = self.fp.read(16)
 
         if i16(s[4:6]) == 0xF1FA:
@@ -96,7 +96,7 @@ class FliImageFile(ImageFile.ImageFile):
         # load palette
 
         i = 0
-        for e in range(i16(self.fp.read(2))):
+        for _ in range(i16(self.fp.read(2))):
             s = self.fp.read(2)
             i = i + i8(s[0])
             n = i8(s[1])

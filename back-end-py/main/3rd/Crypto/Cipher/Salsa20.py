@@ -66,13 +66,13 @@ class Salsa20Cipher:
         self.nonce = _copy_bytes(None, None, nonce)
 
         self._state = VoidPointer()
-        result = _raw_salsa20_lib.Salsa20_stream_init(
-                        c_uint8_ptr(key),
-                        c_size_t(len(key)),
-                        c_uint8_ptr(nonce),
-                        c_size_t(len(nonce)),
-                        self._state.address_of())
-        if result:
+        if result := _raw_salsa20_lib.Salsa20_stream_init(
+            c_uint8_ptr(key),
+            c_size_t(len(key)),
+            c_uint8_ptr(nonce),
+            c_size_t(len(nonce)),
+            self._state.address_of(),
+        ):
             raise ValueError("Error %d instantiating a Salsa20 cipher")
         self._state = SmartPointer(self._state.get(),
                                    _raw_salsa20_lib.Salsa20_stream_destroy)
@@ -97,26 +97,23 @@ class Salsa20Cipher:
             ciphertext = create_string_buffer(len(plaintext))
         else:
             ciphertext = output
-           
+
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-        
+
             if len(plaintext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = _raw_salsa20_lib.Salsa20_stream_encrypt(
-                                         self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := _raw_salsa20_lib.Salsa20_stream_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             raise ValueError("Error %d while encrypting with Salsa20" % result)
 
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext, output=None):
         """Decrypt a piece of data.

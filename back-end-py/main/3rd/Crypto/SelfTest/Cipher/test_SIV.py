@@ -349,13 +349,13 @@ class SivFSMTests(unittest.TestCase):
         cipher = AES.new(self.key_256, AES.MODE_SIV, nonce=self.nonce_96)
         cipher.update(self.data_128)
         first_mac = cipher.digest()
-        for x in range(4):
+        for _ in range(4):
             self.assertEqual(first_mac, cipher.digest())
 
         # Multiple calls to verify
         cipher = AES.new(self.key_256, AES.MODE_SIV, nonce=self.nonce_96)
         cipher.update(self.data_128)
-        for x in range(5):
+        for _ in range(5):
             cipher.verify(first_mac)
 
     def test_valid_encrypt_and_digest_decrypt_and_verify(self):
@@ -387,10 +387,7 @@ class SivFSMTests(unittest.TestCase):
 def transform(tv):
     new_tv = [[unhexlify(x) for x in tv[0].split("-")]]
     new_tv += [ unhexlify(x) for x in tv[1:5]]
-    if tv[5]:
-        nonce = unhexlify(tv[5])
-    else:
-        nonce = None
+    nonce = unhexlify(tv[5]) if tv[5] else None
     new_tv += [ nonce ]
     return new_tv
 
@@ -481,7 +478,7 @@ class TestVectorsWycheproof(unittest.TestCase):
         return self._id
 
     def test_encrypt(self, tv):
-        self._id = "Wycheproof Encrypt AES-SIV Test #" + str(tv.id)
+        self._id = f"Wycheproof Encrypt AES-SIV Test #{str(tv.id)}"
 
         cipher = AES.new(tv.key, AES.MODE_SIV)
         cipher.update(tv.aad)
@@ -490,7 +487,7 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.assertEqual(tag + ct, tv.ct)
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt AES_SIV Test #" + str(tv.id)
+        self._id = f"Wycheproof Decrypt AES_SIV Test #{str(tv.id)}"
 
         cipher = AES.new(tv.key, AES.MODE_SIV)
         cipher.update(tv.aad)
@@ -538,7 +535,7 @@ class TestVectorsWycheproof2(unittest.TestCase):
         return self._id
 
     def test_encrypt(self, tv):
-        self._id = "Wycheproof Encrypt AEAD-AES-SIV Test #" + str(tv.id)
+        self._id = f"Wycheproof Encrypt AEAD-AES-SIV Test #{str(tv.id)}"
 
         cipher = AES.new(tv.key, AES.MODE_SIV, nonce=tv.iv)
         cipher.update(tv.aad)
@@ -548,7 +545,7 @@ class TestVectorsWycheproof2(unittest.TestCase):
             self.assertEqual(tag, tv.tag)
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt AEAD-AES-SIV Test #" + str(tv.id)
+        self._id = f"Wycheproof Decrypt AEAD-AES-SIV Test #{str(tv.id)}"
 
         cipher = AES.new(tv.key, AES.MODE_SIV, nonce=tv.iv)
         cipher.update(tv.aad)

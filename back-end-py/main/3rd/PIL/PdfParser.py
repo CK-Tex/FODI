@@ -139,7 +139,8 @@ class XrefTable:
             generation = self.deleted_entries[key]
         else:
             raise IndexError(
-                "object ID " + str(key) + " cannot be deleted because it doesn't exist"
+                f"object ID {str(key)}"
+                + " cannot be deleted because it doesn't exist"
             )
 
     def __contains__(self, key):
@@ -183,9 +184,9 @@ class XrefTable:
                     this_deleted_object_id = deleted_keys.pop(0)
                     check_format_condition(
                         object_id == this_deleted_object_id,
-                        "expected the next deleted object ID to be %s, instead found %s"
-                        % (object_id, this_deleted_object_id),
+                        f"expected the next deleted object ID to be {object_id}, instead found {this_deleted_object_id}",
                     )
+
                     try:
                         next_in_linked_list = deleted_keys[0]
                     except IndexError:
@@ -218,7 +219,7 @@ class PdfName:
         return hash(self.name)
 
     def __repr__(self):
-        return "PdfName(%s)" % repr(self.name)
+        return f"PdfName({repr(self.name)})"
 
     @classmethod
     def from_pdf_stream(cls, data):
@@ -307,16 +308,16 @@ class PdfStream:
             filter = self.dictionary.Filter
         except AttributeError:
             return self.buf
-        if filter == b"FlateDecode":
-            try:
-                expected_length = self.dictionary.DL
-            except AttributeError:
-                expected_length = self.dictionary.Length
-            return zlib.decompress(self.buf, bufsize=int(expected_length))
-        else:
+        if filter != b"FlateDecode":
             raise NotImplementedError(
-                "stream filter %s unknown/unsupported" % repr(self.dictionary.Filter)
+                f"stream filter {repr(self.dictionary.Filter)} unknown/unsupported"
             )
+
+        try:
+            expected_length = self.dictionary.DL
+        except AttributeError:
+            expected_length = self.dictionary.Length
+        return zlib.decompress(self.buf, bufsize=int(expected_length))
 
 
 def pdf_repr(x):
@@ -441,7 +442,7 @@ class PdfParser:
 
     def rewrite_pages(self):
         pages_tree_nodes_to_delete = []
-        for i, page_ref in enumerate(self.orig_pages):
+        for page_ref in self.orig_pages:
             page_info = self.cached_objects[page_ref]
             del self.xref_table[page_ref.object_id]
             pages_tree_nodes_to_delete.append(page_info[PdfName(b"Parent")])
@@ -449,10 +450,10 @@ class PdfParser:
                 # the page has been deleted
                 continue
             # make dict keys into strings for passing to write_page
-            stringified_page_info = {}
-            for key, value in page_info.items():
-                # key should be a PdfName
-                stringified_page_info[key.name_as_str()] = value
+            stringified_page_info = {
+                key.name_as_str(): value for key, value in page_info.items()
+            }
+
             stringified_page_info["Parent"] = self.pages_ref
             new_page_ref = self.write_page(None, **stringified_page_info)
             for j, cur_page_ref in enumerate(self.pages):
@@ -695,10 +696,7 @@ class PdfParser:
                 name += m.group(1) + bytearray.fromhex(m.group(3).decode("us-ascii"))
             else:
                 name += m.group(1)
-        if as_text:
-            return name.decode("utf-8")
-        else:
-            return bytes(name)
+        return name.decode("utf-8") if as_text else bytes(name)
 
     re_null = re.compile(whitespace_optional + br"null(?=" + delimiter_or_ws + br")")
     re_true = re.compile(whitespace_optional + br"true(?=" + delimiter_or_ws + br")")
@@ -753,11 +751,9 @@ class PdfParser:
     def get_value(cls, data, offset, expect_indirect=None, max_nesting=-1):
         if max_nesting == 0:
             return None, None
-        m = cls.re_comment.match(data, offset)
-        if m:
+        if m := cls.re_comment.match(data, offset):
             offset = m.end()
-        m = cls.re_indirect_def_start.match(data, offset)
-        if m:
+        if m := cls.re_indirect_def_start.match(data, offset):
             check_format_condition(
                 int(m.group(1)) > 0,
                 "indirect object definition: object ID must be greater than 0",
@@ -781,8 +777,7 @@ class PdfParser:
         check_format_condition(
             not expect_indirect, "indirect object definition not found"
         )
-        m = cls.re_indirect_reference.match(data, offset)
-        if m:
+        if m := cls.re_indirect_reference.match(data, offset):
             check_format_condition(
                 int(m.group(1)) > 0,
                 "indirect object reference: object ID must be greater than 0",
@@ -792,8 +787,7 @@ class PdfParser:
                 "indirect object reference: generation must be non-negative",
             )
             return IndirectReference(int(m.group(1)), int(m.group(2))), m.end()
-        m = cls.re_dict_start.match(data, offset)
-        if m:
+        if m := cls.re_dict_start.match(data, offset):
             offset = m.end()
             result = {}
             m = cls.re_dict_end.match(data, offset)
@@ -807,8 +801,7 @@ class PdfParser:
                     return result, None
                 m = cls.re_dict_end.match(data, offset)
             offset = m.end()
-            m = cls.re_stream_start.match(data, offset)
-            if m:
+            if m := cls.re_stream_start.match(data, offset):
                 try:
                     stream_len = int(result[b"Length"])
                 except (TypeError, KeyError, ValueError):
@@ -824,8 +817,7 @@ class PdfParser:
             else:
                 result = PdfDict(result)
             return result, offset
-        m = cls.re_array_start.match(data, offset)
-        if m:
+        if m := cls.re_array_start.match(data, offset):
             offset = m.end()
             result = []
             m = cls.re_array_end.match(data, offset)
@@ -836,27 +828,20 @@ class PdfParser:
                     return result, None
                 m = cls.re_array_end.match(data, offset)
             return result, m.end()
-        m = cls.re_null.match(data, offset)
-        if m:
+        if m := cls.re_null.match(data, offset):
             return None, m.end()
-        m = cls.re_true.match(data, offset)
-        if m:
+        if m := cls.re_true.match(data, offset):
             return True, m.end()
-        m = cls.re_false.match(data, offset)
-        if m:
+        if m := cls.re_false.match(data, offset):
             return False, m.end()
-        m = cls.re_name.match(data, offset)
-        if m:
+        if m := cls.re_name.match(data, offset):
             return PdfName(cls.interpret_name(m.group(1))), m.end()
-        m = cls.re_int.match(data, offset)
-        if m:
+        if m := cls.re_int.match(data, offset):
             return int(m.group(1)), m.end()
-        m = cls.re_real.match(data, offset)
-        if m:
+        if m := cls.re_real.match(data, offset):
             # XXX Decimal instead of float???
             return float(m.group(1)), m.end()
-        m = cls.re_string_hex.match(data, offset)
-        if m:
+        if m := cls.re_string_hex.match(data, offset):
             # filter out whitespace
             hex_string = bytearray(
                 [b for b in m.group(1) if b in b"0123456789abcdefABCDEF"]
@@ -865,11 +850,12 @@ class PdfParser:
                 # append a 0 if the length is not even - yes, at the end
                 hex_string.append(ord(b"0"))
             return bytearray.fromhex(hex_string.decode("us-ascii")), m.end()
-        m = cls.re_string_lit.match(data, offset)
-        if m:
+        if m := cls.re_string_lit.match(data, offset):
             return cls.get_literal_string(data, m.end())
         # return None, offset  # fallback (only for debugging)
-        raise PdfFormatError("unrecognized object: " + repr(data[offset : offset + 32]))
+        raise PdfFormatError(
+            f"unrecognized object: {repr(data[offset : offset + 32])}"
+        )
 
     re_lit_str_token = re.compile(
         br"(\\[nrtbf()\\])|(\\[0-9]{1,3})|(\\(\r\n|\r|\n))|(\r\n|\r|\n)|(\()|(\))"
@@ -952,8 +938,8 @@ class PdfParser:
                 check_format_condition(m, "xref entry not found")
                 offset = m.end()
                 is_free = m.group(3) == b"f"
-                generation = int(m.group(2))
                 if not is_free:
+                    generation = int(m.group(2))
                     new_entry = (int(m.group(1)), generation)
                     check_format_condition(
                         i not in self.xref_table or self.xref_table[i] == new_entry,

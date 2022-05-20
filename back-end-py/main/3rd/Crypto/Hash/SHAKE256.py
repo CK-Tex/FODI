@@ -52,10 +52,9 @@ class SHAKE256_XOF(object):
 
     def __init__(self, data=None):
         state = VoidPointer()
-        result = _raw_keccak_lib.keccak_init(state.address_of(),
-                                             c_size_t(64),
-                                             0x1F)
-        if result:
+        if result := _raw_keccak_lib.keccak_init(
+            state.address_of(), c_size_t(64), 0x1F
+        ):
             raise ValueError("Error %d while instantiating SHAKE256"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -74,10 +73,9 @@ class SHAKE256_XOF(object):
         if self._is_squeezing:
             raise TypeError("You cannot call 'update' after the first 'read'")
 
-        result = _raw_keccak_lib.keccak_absorb(self._state.get(),
-                                               c_uint8_ptr(data),
-                                               c_size_t(len(data)))
-        if result:
+        if result := _raw_keccak_lib.keccak_absorb(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while updating SHAKE256 state"
                              % result)
         return self
@@ -99,10 +97,9 @@ class SHAKE256_XOF(object):
 
         self._is_squeezing = True
         bfr = create_string_buffer(length)
-        result = _raw_keccak_lib.keccak_squeeze(self._state.get(),
-                                                bfr,
-                                                c_size_t(length))
-        if result:
+        if result := _raw_keccak_lib.keccak_squeeze(
+            self._state.get(), bfr, c_size_t(length)
+        ):
             raise ValueError("Error %d while extracting from SHAKE256"
                              % result)
 

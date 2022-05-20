@@ -421,10 +421,7 @@ class OcbFSMTests(unittest.TestCase):
         for method_name in "encrypt", "decrypt":
             for auth_data in (None, b("333"), self.data_128,
                               self.data_128 + b("3")):
-                if auth_data is None:
-                    assoc_len = None
-                else:
-                    assoc_len = len(auth_data)
+                assoc_len = None if auth_data is None else len(auth_data)
                 cipher = AES.new(self.key_128, AES.MODE_OCB,
                                  nonce=self.nonce_96)
                 if auth_data is not None:
@@ -441,13 +438,13 @@ class OcbFSMTests(unittest.TestCase):
         cipher = AES.new(self.key_128, AES.MODE_OCB, nonce=self.nonce_96)
         cipher.update(self.data_128)
         first_mac = cipher.digest()
-        for x in range(4):
+        for _ in range(4):
             self.assertEqual(first_mac, cipher.digest())
 
         # Multiple calls to verify
         cipher = AES.new(self.key_128, AES.MODE_OCB, nonce=self.nonce_96)
         cipher.update(self.data_128)
-        for x in range(5):
+        for _ in range(5):
             cipher.verify(first_mac)
 
     def test_valid_encrypt_and_digest_decrypt_and_verify(self):

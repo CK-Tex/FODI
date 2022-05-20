@@ -24,6 +24,7 @@
 
 """Self-test suite for Crypto.Cipher.DES3"""
 
+
 import unittest
 from binascii import hexlify, unhexlify
 
@@ -56,10 +57,13 @@ test_data = [
 nist_tdes_mmt_files = ("TECBMMT2.rsp", "TECBMMT3.rsp")
 
 for tdes_file in nist_tdes_mmt_files:
-    test_vectors = load_tests(("Crypto", "SelfTest", "Cipher", "test_vectors", "TDES"),
-                                  tdes_file,
-                                  "TDES ECB (%s)" % tdes_file,
-                                  { "count" : lambda x: int(x) } )
+    test_vectors = load_tests(
+        ("Crypto", "SelfTest", "Cipher", "test_vectors", "TDES"),
+        tdes_file,
+        f"TDES ECB ({tdes_file})",
+        {"count": lambda x: int(x)},
+    )
+
     assert(test_vectors)
     for index, tv in enumerate(test_vectors):
 
@@ -68,10 +72,13 @@ for tdes_file in nist_tdes_mmt_files:
             continue
 
         key = tv.key1 + tv.key2 + tv.key3
-        test_data_item = (tostr(hexlify(tv.plaintext)),
-                          tostr(hexlify(tv.ciphertext)),
-                          tostr(hexlify(key)),
-                          "%s (%s)" % (tdes_file, index))
+        test_data_item = (
+            tostr(hexlify(tv.plaintext)),
+            tostr(hexlify(tv.ciphertext)),
+            tostr(hexlify(key)),
+            f"{tdes_file} ({index})",
+        )
+
         test_data.append(test_data_item)
 
 

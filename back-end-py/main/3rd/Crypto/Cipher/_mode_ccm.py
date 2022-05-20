@@ -344,12 +344,11 @@ class CcmMode(object):
         # No more associated data allowed from now
         if self._assoc_len is None:
             assert(isinstance(self._cache, list))
-            self._assoc_len = sum([len(x) for x in self._cache])
+            self._assoc_len = sum(len(x) for x in self._cache)
             if self._msg_len is not None:
                 self._start_mac()
-        else:
-            if self._cumul_assoc_len < self._assoc_len:
-                raise ValueError("Associated data is too short")
+        elif self._cumul_assoc_len < self._assoc_len:
+            raise ValueError("Associated data is too short")
 
         # Only once piece of plaintext accepted if message length was
         # not declared in advance
@@ -417,12 +416,11 @@ class CcmMode(object):
         # No more associated data allowed from now
         if self._assoc_len is None:
             assert(isinstance(self._cache, list))
-            self._assoc_len = sum([len(x) for x in self._cache])
+            self._assoc_len = sum(len(x) for x in self._cache)
             if self._msg_len is not None:
                 self._start_mac()
-        else:
-            if self._cumul_assoc_len < self._assoc_len:
-                raise ValueError("Associated data is too short")
+        elif self._cumul_assoc_len < self._assoc_len:
+            raise ValueError("Associated data is too short")
 
         # Only once piece of ciphertext accepted if message length was
         # not declared in advance
@@ -473,12 +471,11 @@ class CcmMode(object):
 
         if self._assoc_len is None:
             assert(isinstance(self._cache, list))
-            self._assoc_len = sum([len(x) for x in self._cache])
+            self._assoc_len = sum(len(x) for x in self._cache)
             if self._msg_len is not None:
                 self._start_mac()
-        else:
-            if self._cumul_assoc_len < self._assoc_len:
-                raise ValueError("Associated data is too short")
+        elif self._cumul_assoc_len < self._assoc_len:
+            raise ValueError("Associated data is too short")
 
         if self._msg_len is None:
             self._msg_len = 0
@@ -636,7 +633,7 @@ def _create_ccm_cipher(factory, **kwargs):
     try:
         key = key = kwargs.pop("key")
     except KeyError as e:
-        raise TypeError("Missing parameter: " + str(e))
+        raise TypeError(f"Missing parameter: {str(e)}")
 
     nonce = kwargs.pop("nonce", None)  # N
     if nonce is None:

@@ -3,10 +3,10 @@
 
 import json
 for s in ['', '.']:
-    p = s + 'main.api'
+    p = f'{s}main.api'
     try:
         for v in ['*', 'API_NAMES']:
-            exec('from ' + p + ' import ' + v)
+            exec(f'from {p} import {v}')
         break
     except Exception:
         pass
@@ -43,20 +43,16 @@ def router(event):
     api_url = door + event['path']
 
     queryString = event['queryString']
-    body = None
-    if 'body' in event:
-        body = event['body']
-
-    if api in API_NAMES:
-        data = eval(api)(api_url, queryString, body)
-    else:
-        data = {
+    body = event['body'] if 'body' in event else None
+    return (
+        eval(api)(api_url, queryString, body)
+        if api in API_NAMES
+        else {
             'code': -1,
             'error': 'path error.',
-            'examples': [door + func_path + '/' + p + '/' for p in API_NAMES]
+            'examples': [door + func_path + '/' + p + '/' for p in API_NAMES],
         }
-
-    return data
+    )
 
 
 def main_handler(event, content):

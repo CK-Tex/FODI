@@ -304,9 +304,7 @@ def new(**kwargs):
     try:
         key = kwargs.pop("key")
     except KeyError as e:
-        raise TypeError("Missing parameter %s" % e)
-
-        self._len_ct += len(plaintext)
+        raise TypeError(f"Missing parameter {e}")
 
     if len(key) != 32:
         raise ValueError("Key must be 32 bytes long")
@@ -315,7 +313,7 @@ def new(**kwargs):
     if nonce is None:
         nonce = get_random_bytes(12)
 
-    if len(nonce) in (8, 12):
+    if len(nonce) in {8, 12}:
         pass
     elif len(nonce) == 24:
         key = _HChaCha20(key, nonce[:16])
@@ -327,7 +325,7 @@ def new(**kwargs):
         raise TypeError("nonce must be bytes, bytearray or memoryview")
 
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     return ChaCha20Poly1305Cipher(key, nonce)
 

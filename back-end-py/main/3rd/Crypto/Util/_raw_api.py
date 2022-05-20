@@ -39,10 +39,9 @@ from Crypto.Util._file_system import pycryptodome_filename
 if sys.version_info[0] < 3:
 
     import imp
-    extension_suffixes = []
-    for ext, mod, typ in imp.get_suffixes():
-        if typ == imp.C_EXTENSION:
-            extension_suffixes.append(ext)
+    extension_suffixes = [
+        ext for ext, mod, typ in imp.get_suffixes() if typ == imp.C_EXTENSION
+    ]
 
 else:
 
@@ -120,9 +119,9 @@ try:
             size = max(len(init_or_size) + 1, size)
             result = ffi.new("uint8_t[]", size)
             result[:] = init_or_size
+        elif size:
+            raise ValueError("Size must be specified once only")
         else:
-            if size:
-                raise ValueError("Size must be specified once only")
             result = ffi.new("uint8_t[]", init_or_size)
         return result
 
@@ -141,7 +140,7 @@ try:
         elif byte_string(data) or isinstance(data, _Array):
             return data
         else:
-            raise TypeError("Object type %s cannot be passed to C code" % type(data))
+            raise TypeError(f"Object type {type(data)} cannot be passed to C code")
 
     class VoidPointer_cffi(_VoidPointer):
         """Model a newly allocated pointer to void"""
@@ -235,7 +234,7 @@ except ImportError:
             finally:
                 _PyBuffer_Release(byref(buf))
         else:
-            raise TypeError("Object type %s cannot be passed to C code" % type(data))
+            raise TypeError(f"Object type {type(data)} cannot be passed to C code")
 
     # ---
 

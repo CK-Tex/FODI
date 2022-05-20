@@ -60,15 +60,11 @@ def run(module=None, verbosity=0, stream=None, tests=None, config=None, **kwargs
         if tests is None:
             tests = get_tests(config=config)
         suite.addTests(tests)
+    elif tests is None:
+        suite.addTests(module.get_tests(config=config))
     else:
-        if tests is None:
-            suite.addTests(module.get_tests(config=config))
-        else:
-            raise ValueError("'module' and 'tests' arguments are mutually exclusive")
-    if stream is None:
-        kwargs['stream'] = BytesIO()
-    else:
-        kwargs['stream'] = stream
+        raise ValueError("'module' and 'tests' arguments are mutually exclusive")
+    kwargs['stream'] = BytesIO() if stream is None else stream
     runner = unittest.TextTestRunner(verbosity=verbosity, **kwargs)
     result = runner.run(suite)
     if not result.wasSuccessful():

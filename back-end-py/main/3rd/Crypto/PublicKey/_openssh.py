@@ -93,7 +93,7 @@ def import_openssh_private_generic(data, password):
         decrypted = encrypted
     else:
         if (ciphername, kdfname) != ('aes256-ctr', 'bcrypt'):
-            raise ValueError("Unsupported encryption scheme %s/%s" % (ciphername, kdfname))
+            raise ValueError(f"Unsupported encryption scheme {ciphername}/{kdfname}")
 
         salt, kdfoptions = read_bytes(kdfoptions)
         iterations, kdfoptions = read_int4(kdfoptions)

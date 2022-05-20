@@ -452,14 +452,14 @@ class ChaCha20Poly1305FSMTests(unittest.TestCase):
                                        nonce=self.nonce_96)
         cipher.update(self.data_128)
         first_mac = cipher.digest()
-        for x in range(4):
+        for _ in range(4):
             self.assertEqual(first_mac, cipher.digest())
 
         # Multiple calls to verify
         cipher = ChaCha20_Poly1305.new(key=self.key_256,
                                        nonce=self.nonce_96)
         cipher.update(self.data_128)
-        for x in range(5):
+        for _ in range(5):
             cipher.verify(first_mac)
 
     def test_valid_encrypt_and_digest_decrypt_and_verify(self):
@@ -665,11 +665,11 @@ class TestVectorsWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_encrypt(self, tv):
-        self._id = "Wycheproof Encrypt %s Test #%s" % (tv.algo, tv.id)
-        
+        self._id = f"Wycheproof Encrypt {tv.algo} Test #{tv.id}"
+
         try:
             cipher = ChaCha20_Poly1305.new(key=tv.key, nonce=tv.iv)
         except ValueError as e:
@@ -684,8 +684,8 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.warn(tv)
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt %s Test #%s" % (tv.algo, tv.id)
-        
+        self._id = f"Wycheproof Decrypt {tv.algo} Test #{tv.id}"
+
         try:
             cipher = ChaCha20_Poly1305.new(key=tv.key, nonce=tv.iv)
         except ValueError as e:
@@ -703,7 +703,7 @@ class TestVectorsWycheproof(unittest.TestCase):
             self.warn(tv)
 
     def test_corrupt_decrypt(self, tv):
-        self._id = "Wycheproof Corrupt Decrypt ChaCha20-Poly1305 Test #" + str(tv.id)
+        self._id = f"Wycheproof Corrupt Decrypt ChaCha20-Poly1305 Test #{str(tv.id)}"
         if len(tv.iv) == 0 or len(tv.ct) < 1:
             return
         cipher = ChaCha20_Poly1305.new(key=tv.key, nonce=tv.iv)

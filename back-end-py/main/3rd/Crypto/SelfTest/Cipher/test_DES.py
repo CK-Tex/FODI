@@ -315,11 +315,7 @@ class RonRivestTest(unittest.TestCase):
 
         for i in range(16):
             c = DES.new(X[i],DES.MODE_ECB)
-            if not (i&1): # (num&1) returns 1 for odd numbers
-                X[i+1:] = [c.encrypt(X[i])] # even
-            else:
-                X[i+1:] = [c.decrypt(X[i])] # odd
-
+            X[i+1:] = [c.decrypt(X[i])] if i&1 else [c.encrypt(X[i])]
         self.assertEqual(b2a_hex(X[16]),
             b2a_hex(b'\x1B\x1A\x2D\xDB\x4C\x64\x24\x38'))
 

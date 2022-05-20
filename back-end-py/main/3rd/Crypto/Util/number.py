@@ -74,8 +74,7 @@ def getRandomInteger(N, randfunc=None):
     if odd_bits != 0:
         rand_bits = ord(randfunc(1)) >> (8-odd_bits)
         S = struct.pack('B', rand_bits) + S
-    value = bytes_to_long(S)
-    return value
+    return bytes_to_long(S)
 
 def getRandomRange(a, b, randfunc=None):
     """Return a random number *n* so that *a <= n < b*.
@@ -175,7 +174,7 @@ def _rabinMillerTest(n, rounds, randfunc=None):
 
     tested = []
     # we need to do at most n-2 rounds.
-    for i in iter_range (min (rounds, n-2)):
+    for _ in iter_range (min (rounds, n-2)):
         # randomly choose a < n and make sure it hasn't been tested yet
         a = getRandomRange (2, n, randfunc)
         while a in tested:
@@ -183,10 +182,10 @@ def _rabinMillerTest(n, rounds, randfunc=None):
         tested.append (a)
         # do the rabin-miller test
         z = pow (a, m, n) # (a**m) % n
-        if z == 1 or z == n_1:
+        if z in [1, n_1]:
             continue
         composite = 1
-        for r in iter_range(b):
+        for _ in iter_range(b):
             z = (z * z) % n
             if z == 1:
                 return 0
@@ -299,12 +298,7 @@ def getStrongPrime(N, e=0, false_positive_prob=1e-6, randfunc=None):
     increment = p[0] * p[1]
     X = X + (R - (X % increment))
     while 1:
-        is_possible_prime = 1
-        # first check candidate against sieve_base
-        for prime in sieve_base:
-            if (X % prime) == 0:
-                is_possible_prime = 0
-                break
+        is_possible_prime = next((0 for prime in sieve_base if (X % prime) == 0), 1)
         # if e is given make sure that e and X-1 are coprime
         # this is not necessarily a strong prime criterion but useful when
         # creating them for RSA where the p-1 and q-1 should be coprime to
@@ -313,9 +307,8 @@ def getStrongPrime(N, e=0, false_positive_prob=1e-6, randfunc=None):
             if e & 1:
                 if GCD(e, X-1) != 1:
                     is_possible_prime = 0
-            else:
-                if GCD(e, (X-1) // 2) != 1:
-                    is_possible_prime = 0
+            elif GCD(e, (X-1) // 2) != 1:
+                is_possible_prime = 0
 
         # do some Rabin-Miller-Tests
         if is_possible_prime:
@@ -397,7 +390,7 @@ def long_to_bytes(n, blocksize=0):
     pack = struct.pack
     while n > 0:
         s = pack('>I', n & 0xffffffff) + s
-        n = n >> 32
+        n >>= 32
     # strip off leading zeros
     for i in range(len(s)):
         if s[i] != b'\x00'[0]:
@@ -433,7 +426,7 @@ def bytes_to_long(s):
 
     # Up to Python 2.7.4, struct.unpack can't work with bytearrays nor
     # memoryviews
-    if sys.version_info[0:3] < (2, 7, 4):
+    if sys.version_info[:3] < (2, 7, 4):
         if isinstance(s, bytearray):
             s = bytes(s)
         elif isinstance(s, _memoryview):
@@ -443,7 +436,7 @@ def bytes_to_long(s):
     if length % 4:
         extra = (4 - length % 4)
         s = b'\x00' * extra + s
-        length = length + extra
+        length += extra
     for i in range(0, length, 4):
         acc = (acc << 32) + unpack('>I', s[i:i+4])[0]
     return acc

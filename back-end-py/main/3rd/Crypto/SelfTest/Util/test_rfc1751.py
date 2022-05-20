@@ -29,8 +29,7 @@ class RFC1751_Tests(unittest.TestCase):
 
 def get_tests(config={}):
     from Crypto.SelfTest.st_common import list_test_cases
-    tests = list_test_cases(RFC1751_Tests)
-    return tests
+    return list_test_cases(RFC1751_Tests)
 
 
 if __name__ == '__main__':

@@ -69,11 +69,9 @@ def _HChaCha20(key, nonce):
     assert(len(nonce) == 16)
 
     subkey = bytearray(32)
-    result = _raw_chacha20_lib.hchacha20(
-                c_uint8_ptr(key),
-                c_uint8_ptr(nonce),
-                c_uint8_ptr(subkey))
-    if result:
+    if result := _raw_chacha20_lib.hchacha20(
+        c_uint8_ptr(key), c_uint8_ptr(nonce), c_uint8_ptr(subkey)
+    ):
         raise ValueError("Error %d when deriving subkey with HChaCha20" % result)
 
     return subkey
@@ -108,13 +106,13 @@ class ChaCha20Cipher(object):
         self._next = ( self.encrypt, self.decrypt )
 
         self._state = VoidPointer()
-        result = _raw_chacha20_lib.chacha20_init(
-                        self._state.address_of(),
-                        c_uint8_ptr(key),
-                        c_size_t(len(key)),
-                        self.nonce,
-                        c_size_t(len(nonce)))
-        if result:
+        if result := _raw_chacha20_lib.chacha20_init(
+            self._state.address_of(),
+            c_uint8_ptr(key),
+            c_size_t(len(key)),
+            self.nonce,
+            c_size_t(len(nonce)),
+        ):
             raise ValueError("Error %d instantiating a %s cipher" % (result,
                                                                      self._name))
         self._state = SmartPointer(self._state.get(),
@@ -153,18 +151,15 @@ class ChaCha20Cipher(object):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = _raw_chacha20_lib.chacha20_encrypt(
-                                         self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := _raw_chacha20_lib.chacha20_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             raise ValueError("Error %d while encrypting with %s" % (result, self._name))
 
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext, output=None):
         """Decrypt a piece of data.
@@ -200,13 +195,9 @@ class ChaCha20Cipher(object):
         block_low = position & 0xFFFFFFFF
         block_high = position >> 32
 
-        result = _raw_chacha20_lib.chacha20_seek(
-                                                 self._state.get(),
-                                                 c_ulong(block_high),
-                                                 c_ulong(block_low),
-                                                 offset
-                                                 )
-        if result:
+        if result := _raw_chacha20_lib.chacha20_seek(
+            self._state.get(), c_ulong(block_high), c_ulong(block_low), offset
+        ):
             raise ValueError("Error %d while seeking with %s" % (result, self._name))
 
 
@@ -262,7 +253,7 @@ def new(**kwargs):
     try:
         key = kwargs.pop("key")
     except KeyError as e:
-        raise TypeError("Missing parameter %s" % e)
+        raise TypeError(f"Missing parameter {e}")
 
     nonce = kwargs.pop("nonce", None)
     if nonce is None:
@@ -275,7 +266,7 @@ def new(**kwargs):
         raise ValueError("Nonce must be 8/12 bytes(ChaCha20) or 24 bytes (XChaCha20)")
 
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     return ChaCha20Cipher(key, nonce)
 

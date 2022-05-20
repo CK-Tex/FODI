@@ -104,9 +104,7 @@ class GifImageFile(ImageFile.ImageFile):
     @property
     def is_animated(self):
         if self._is_animated is None:
-            if self._n_frames is not None:
-                self._is_animated = self._n_frames != 1
-            else:
+            if self._n_frames is None:
                 current = self.tell()
 
                 try:
@@ -116,6 +114,8 @@ class GifImageFile(ImageFile.ImageFile):
                     self._is_animated = False
 
                 self.seek(current)
+            else:
+                self._is_animated = self._n_frames != 1
         return self._is_animated
 
     def seek(self, frame):
@@ -145,10 +145,8 @@ class GifImageFile(ImageFile.ImageFile):
             self.__fp.seek(self.__rewind)
             self._prev_im = None
             self.disposal_method = 0
-        else:
-            # ensure that the previous frame was loaded
-            if not self.im:
-                self.load()
+        elif not self.im:
+            self.load()
 
         if frame != self.__frame + 1:
             raise ValueError("cannot seek to frame %d" % frame)
@@ -195,8 +193,7 @@ class GifImageFile(ImageFile.ImageFile):
 
                     # disposal method - find the value of bits 4 - 6
                     dispose_bits = 0b00011100 & flags
-                    dispose_bits = dispose_bits >> 2
-                    if dispose_bits:
+                    if dispose_bits := dispose_bits >> 2:
                         # only set the dispose if it is not
                         # unspecified. I'm not sure if this is
                         # correct, but it seems to prevent the last
@@ -232,7 +229,7 @@ class GifImageFile(ImageFile.ImageFile):
                 s = self.fp.read(9)
 
                 # extent
-                x0, y0 = i16(s[0:]), i16(s[2:])
+                x0, y0 = i16(s[:]), i16(s[2:])
                 x1, y1 = x0 + i16(s[4:]), y0 + i16(s[6:])
                 if x1 > self.size[0] or y1 > self.size[1]:
                     self._size = max(x1, self.size[0]), max(y1, self.size[1])
@@ -253,10 +250,6 @@ class GifImageFile(ImageFile.ImageFile):
                 ]
                 break
 
-            else:
-                pass
-                # raise IOError, "illegal GIF tag `%x`" % i8(s)
-
         try:
             if self.disposal_method < 2:
                 # do not dispose or none specified
@@ -265,10 +258,8 @@ class GifImageFile(ImageFile.ImageFile):
                 # replace with background colour
                 Image._decompression_bomb_check(self.size)
                 self.dispose = Image.core.fill("P", self.size, self.info["background"])
-            else:
-                # replace with previous contents
-                if self.im:
-                    self.dispose = self.im.copy()
+            elif self.im:
+                self.dispose = self.im.copy()
 
             # only dispose the extent in this frame
             if self.dispose:
@@ -343,13 +334,10 @@ def _normalize_mode(im, initial_call=False):
         im.load()
         return im
     if Image.getmodebase(im.mode) == "RGB":
-        if initial_call:
-            palette_size = 256
-            if im.palette:
-                palette_size = len(im.palette.getdata()[1]) // 3
-            return im.convert("P", palette=Image.ADAPTIVE, colors=palette_size)
-        else:
+        if not initial_call:
             return im.convert("P")
+        palette_size = len(im.palette.getdata()[1]) // 3 if im.palette else 256
+        return im.convert("P", palette=Image.ADAPTIVE, colors=palette_size)
     return im.convert("L")
 
 
@@ -409,7 +397,7 @@ def _write_single_frame(im, fp, palette):
     # local image header
     flags = 0
     if get_interlace(im):
-        flags = flags | 64
+        flags |= 64
     _write_local_header(fp, im, (0, 0), flags)
 
     im_out.encoderconfig = (8, get_interlace(im))
@@ -568,7 +556,7 @@ def _write_local_header(fp, im, offset, flags):
             + o8(0)
         )
 
-    if "comment" in im.encoderinfo and 1 <= len(im.encoderinfo["comment"]):
+    if "comment" in im.encoderinfo and len(im.encoderinfo["comment"]) >= 1:
         fp.write(b"!" + o8(254))  # extension intro
         comment = im.encoderinfo["comment"]
         if isinstance(comment, str):
@@ -644,12 +632,10 @@ def _save_netpbm(im, fp, filename):
                 # Allow ppmquant to receive SIGPIPE if ppmtogif exits
                 quant_proc.stdout.close()
 
-                retcode = quant_proc.wait()
-                if retcode:
+                if retcode := quant_proc.wait():
                     raise subprocess.CalledProcessError(retcode, quant_cmd)
 
-                retcode = togif_proc.wait()
-                if retcode:
+                if retcode := togif_proc.wait():
                     raise subprocess.CalledProcessError(retcode, togif_cmd)
     finally:
         try:
@@ -688,11 +674,7 @@ def _get_optimize(im, info):
         optimise = _FORCE_OPTIMIZE or im.mode == "L"
         if optimise or im.width * im.height < 512 * 512:
             # check which colors are used
-            used_palette_colors = []
-            for i, count in enumerate(im.histogram()):
-                if count:
-                    used_palette_colors.append(i)
-
+            used_palette_colors = [i for i, count in enumerate(im.histogram()) if count]
             if optimise or (
                 len(used_palette_colors) <= 128
                 and max(used_palette_colors) > len(used_palette_colors)

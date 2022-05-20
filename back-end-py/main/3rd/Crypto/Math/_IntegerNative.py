@@ -52,7 +52,7 @@ class IntegerNative(IntegerBase):
         return str(int(self))
 
     def __repr__(self):
-        return "Integer(%s)" % str(self)
+        return f"Integer({str(self)})"
 
     # Only Python 2.x
     def __hex__(self):
@@ -76,9 +76,7 @@ class IntegerNative(IntegerBase):
 
     # Relations
     def __eq__(self, term):
-        if term is None:
-            return False
-        return self._value == int(term)
+        return False if term is None else self._value == int(term)
 
     def __ne__(self, term):
         return not self.__eq__(term)
@@ -167,9 +165,9 @@ class IntegerNative(IntegerBase):
                 x = y
                 y = (x + value // x) // 2
             result = x
+        elif modulus <= 0:
+            raise ValueError("Modulus must be positive")
         else:
-            if modulus <= 0:
-                raise ValueError("Modulus must be positive")
             result = self._tonelli_shanks(self % modulus, modulus)
 
         return self.__class__(result)
@@ -206,19 +204,13 @@ class IntegerNative(IntegerBase):
         try:
             return self.__class__(self._value >> int(pos))
         except OverflowError:
-            if self._value >= 0:
-                return 0
-            else:
-                return -1
+            return 0 if self._value >= 0 else -1
 
     def __irshift__(self, pos):
         try:
             self._value >>= int(pos)
         except OverflowError:
-            if self._value >= 0:
-                return 0
-            else:
-                return -1
+            return 0 if self._value >= 0 else -1
         return self
 
     def __lshift__(self, pos):
@@ -315,7 +307,7 @@ class IntegerNative(IntegerBase):
             r_p, r_n = r_n, r_p - q * r_n
             s_p, s_n = s_n, s_p - q * s_n
         if r_p != 1:
-            raise ValueError("No inverse value can be computed" + str(r_p))
+            raise ValueError(f"No inverse value can be computed{str(r_p)}")
         while s_p < 0:
             s_p += modulus
         self._value = s_p
@@ -351,7 +343,7 @@ class IntegerNative(IntegerBase):
             raise ValueError("n must be even for the Jacobi symbol")
 
         # Step 1
-        a = a % n
+        a %= n
         # Step 2
         if a == 1 or n == 1:
             return 1
@@ -365,12 +357,7 @@ class IntegerNative(IntegerBase):
             a1 >>= 1
             e += 1
         # Step 5
-        if (e & 1) == 0:
-            s = 1
-        elif n % 8 in (1, 7):
-            s = 1
-        else:
-            s = -1
+        s = 1 if (e & 1) == 0 or n % 8 in (1, 7) else -1
         # Step 6
         if n % 4 == 3 and a1 % 4 == 3:
             s = -s

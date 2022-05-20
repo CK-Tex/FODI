@@ -192,15 +192,14 @@ def _create_openpgp_cipher(factory, **kwargs):
 
     if (None, None) == (iv, IV):
         iv = get_random_bytes(factory.block_size)
-    if iv is not None:
-        if IV is not None:
-            raise TypeError("You must either use 'iv' or 'IV', not both")
-    else:
+    if iv is None:
         iv = IV
 
+    elif IV is not None:
+        raise TypeError("You must either use 'iv' or 'IV', not both")
     try:
         key = kwargs.pop("key")
     except KeyError as e:
-        raise TypeError("Missing component: " + str(e))
+        raise TypeError(f"Missing component: {str(e)}")
 
     return OpenPgpMode(factory, key, iv, kwargs)

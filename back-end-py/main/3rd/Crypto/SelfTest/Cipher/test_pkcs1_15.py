@@ -156,12 +156,12 @@ HKukWBcq9f/UOmS0oEhai/6g+Uf7VHJdWaeO5LzuvwU=
         def testEncryptVerify1(self):
                 # Encrypt/Verify messages of length [0..RSAlen-11]
                 # and therefore padding [8..117]
-                for pt_len in range(0,128-11+1):
-                    pt = self.rng(pt_len)
-                    cipher = PKCS.new(self.key1024)
-                    ct = cipher.encrypt(pt)
-                    pt2 = cipher.decrypt(ct, "---")
-                    self.assertEqual(pt,pt2)
+            for pt_len in range(128-11+1):
+                pt = self.rng(pt_len)
+                cipher = PKCS.new(self.key1024)
+                ct = cipher.encrypt(pt)
+                pt2 = cipher.decrypt(ct, "---")
+                self.assertEqual(pt,pt2)
 
         def testByteArray(self):
             pt = b"XER"
@@ -231,10 +231,10 @@ class TestVectorsWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_decrypt(self, tv):
-        self._id = "Wycheproof Decrypt PKCS#1v1.5 Test #%s" % tv.id
+        self._id = f"Wycheproof Decrypt PKCS#1v1.5 Test #{tv.id}"
 
         cipher = PKCS.new(tv.rsa_key)
         try:

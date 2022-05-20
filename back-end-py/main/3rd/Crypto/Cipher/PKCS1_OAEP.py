@@ -60,16 +60,8 @@ class PKCS1OAEP_Cipher:
         """
         self._key = key
 
-        if hashAlgo:
-            self._hashObj = hashAlgo
-        else:
-            self._hashObj = Crypto.Hash.SHA1
-
-        if mgfunc:
-            self._mgf = mgfunc
-        else:
-            self._mgf = lambda x,y: MGF1(x,y,self._hashObj)
-
+        self._hashObj = hashAlgo or Crypto.Hash.SHA1
+        self._mgf = mgfunc or (lambda x,y: MGF1(x,y,self._hashObj))
         self._label = _copy_bytes(None, None, label)
         self._randfunc = randfunc
 
@@ -135,9 +127,7 @@ class PKCS1OAEP_Cipher:
         em_int = bytes_to_long(em)
         # Step 3b (RSAEP)
         m_int = self._key._encrypt(em_int)
-        # Step 3c (I2OSP)
-        c = long_to_bytes(m_int, k)
-        return c
+        return long_to_bytes(m_int, k)
 
     def decrypt(self, ciphertext):
         """Decrypt a message with PKCS#1 OAEP.

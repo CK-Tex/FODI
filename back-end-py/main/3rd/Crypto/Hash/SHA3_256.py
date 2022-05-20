@@ -51,10 +51,9 @@ class SHA3_256_Hash(object):
         self._digest_done = False
 
         state = VoidPointer()
-        result = _raw_keccak_lib.keccak_init(state.address_of(),
-                                             c_size_t(self.digest_size * 2),
-                                             0x06)
-        if result:
+        if result := _raw_keccak_lib.keccak_init(
+            state.address_of(), c_size_t(self.digest_size * 2), 0x06
+        ):
             raise ValueError("Error %d while instantiating SHA-3/256"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -72,10 +71,9 @@ class SHA3_256_Hash(object):
         if self._digest_done and not self._update_after_digest:
             raise TypeError("You can only call 'digest' or 'hexdigest' on this object")
 
-        result = _raw_keccak_lib.keccak_absorb(self._state.get(),
-                                               c_uint8_ptr(data),
-                                               c_size_t(len(data)))
-        if result:
+        if result := _raw_keccak_lib.keccak_absorb(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while updating SHA-3/256"
                              % result)
         return self
@@ -91,10 +89,9 @@ class SHA3_256_Hash(object):
         self._digest_done = True
 
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_keccak_lib.keccak_digest(self._state.get(),
-                                               bfr,
-                                               c_size_t(self.digest_size))
-        if result:
+        if result := _raw_keccak_lib.keccak_digest(
+            self._state.get(), bfr, c_size_t(self.digest_size)
+        ):
             raise ValueError("Error %d while instantiating SHA-3/256"
                              % result)
 
@@ -139,7 +136,7 @@ def new(*args, **kwargs):
         data = args[0]
 
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     return SHA3_256_Hash(data, update_after_digest)
 

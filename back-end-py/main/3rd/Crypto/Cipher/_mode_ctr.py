@@ -123,14 +123,15 @@ class CtrMode(object):
             """Nonce; not available if there is a fixed suffix"""
 
         self._state = VoidPointer()
-        result = raw_ctr_lib.CTR_start_operation(block_cipher.get(),
-                                                 c_uint8_ptr(initial_counter_block),
-                                                 c_size_t(len(initial_counter_block)),
-                                                 c_size_t(prefix_len),
-                                                 counter_len,
-                                                 little_endian,
-                                                 self._state.address_of())
-        if result:
+        if result := raw_ctr_lib.CTR_start_operation(
+            block_cipher.get(),
+            c_uint8_ptr(initial_counter_block),
+            c_size_t(len(initial_counter_block)),
+            c_size_t(prefix_len),
+            counter_len,
+            little_endian,
+            self._state.address_of(),
+        ):
             raise ValueError("Error %X while instantiating the CTR mode"
                              % result)
 
@@ -184,33 +185,31 @@ class CtrMode(object):
         if self.encrypt not in self._next:
             raise TypeError("encrypt() cannot be called after decrypt()")
         self._next = [self.encrypt]
-        
+
         if output is None:
             ciphertext = create_string_buffer(len(plaintext))
         else:
             ciphertext = output
-            
+
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-        
+
             if len(plaintext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_ctr_lib.CTR_encrypt(self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := raw_ctr_lib.CTR_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             if result == 0x60002:
                 raise OverflowError("The counter has wrapped around in"
                                     " CTR mode")
             raise ValueError("Error %X while encrypting in CTR mode" % result)
-        
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext, output=None):
         """Decrypt data with the key and the parameters set at initialization.
@@ -248,7 +247,7 @@ class CtrMode(object):
         if self.decrypt not in self._next:
             raise TypeError("decrypt() cannot be called after encrypt()")
         self._next = [self.decrypt]
-        
+
         if output is None:
             plaintext = create_string_buffer(len(ciphertext))
         else:
@@ -256,26 +255,24 @@ class CtrMode(object):
 
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-            
+
             if len(ciphertext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
 
-        result = raw_ctr_lib.CTR_decrypt(self._state.get(),
-                                         c_uint8_ptr(ciphertext),
-                                         c_uint8_ptr(plaintext),
-                                         c_size_t(len(ciphertext)))
-        if result:
+        if result := raw_ctr_lib.CTR_decrypt(
+            self._state.get(),
+            c_uint8_ptr(ciphertext),
+            c_uint8_ptr(plaintext),
+            c_size_t(len(ciphertext)),
+        ):
             if result == 0x60002:
                 raise OverflowError("The counter has wrapped around in"
                                     " CTR mode")
             raise ValueError("Error %X while decrypting in CTR mode" % result)
-        
-        if output is None:
-            return get_raw_buffer(plaintext)
-        else:
-            return None
+
+        return get_raw_buffer(plaintext) if output is None else None
 
 
 def _create_ctr_cipher(factory, **kwargs):
@@ -321,7 +318,7 @@ def _create_ctr_cipher(factory, **kwargs):
     nonce = kwargs.pop("nonce", None)
     initial_value = kwargs.pop("initial_value", None)
     if kwargs:
-        raise TypeError("Invalid parameters for CTR mode: %s" % str(kwargs))
+        raise TypeError(f"Invalid parameters for CTR mode: {str(kwargs)}")
 
     if counter is not None and (nonce, initial_value) != (None, None):
             raise TypeError("'counter' and 'nonce'/'initial_value'"
@@ -333,11 +330,11 @@ def _create_ctr_cipher(factory, **kwargs):
             if factory.block_size < 16:
                 raise TypeError("Impossible to create a safe nonce for short"
                                 " block sizes")
-            nonce = get_random_bytes(factory.block_size // 2)
-        else:
-            if len(nonce) >= factory.block_size:
-                raise ValueError("Nonce is too long")
-        
+            else:
+                nonce = get_random_bytes(factory.block_size // 2)
+        elif len(nonce) >= factory.block_size:
+            raise ValueError("Nonce is too long")
+
         # What is not nonce is counter
         counter_len = factory.block_size - len(nonce)
 
@@ -348,11 +345,11 @@ def _create_ctr_cipher(factory, **kwargs):
             if (1 << (counter_len * 8)) - 1 < initial_value:
                 raise ValueError("Initial counter value is too large")
             initial_counter_block = nonce + long_to_bytes(initial_value, counter_len)
-        else:
-            if len(initial_value) != counter_len:
-                raise ValueError("Incorrect length for counter byte string (%d bytes, expected %d)" % (len(initial_value), counter_len))
+        elif len(initial_value) == counter_len:
             initial_counter_block = nonce + initial_value
 
+        else:
+            raise ValueError("Incorrect length for counter byte string (%d bytes, expected %d)" % (len(initial_value), counter_len))
         return CtrMode(cipher_state,
                        initial_counter_block,
                        len(nonce),                     # prefix

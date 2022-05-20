@@ -83,15 +83,15 @@ class BLAKE2b_Hash(object):
 
         # See https://tools.ietf.org/html/rfc7693
         if digest_bytes in (20, 32, 48, 64) and not key:
-            self.oid = "1.3.6.1.4.1.1722.12.2.1." + str(digest_bytes)
+            self.oid = f"1.3.6.1.4.1.1722.12.2.1.{str(digest_bytes)}"
 
         state = VoidPointer()
-        result = _raw_blake2b_lib.blake2b_init(state.address_of(),
-                                               c_uint8_ptr(key),
-                                               c_size_t(len(key)),
-                                               c_size_t(digest_bytes)
-                                               )
-        if result:
+        if result := _raw_blake2b_lib.blake2b_init(
+            state.address_of(),
+            c_uint8_ptr(key),
+            c_size_t(len(key)),
+            c_size_t(digest_bytes),
+        ):
             raise ValueError("Error %d while instantiating BLAKE2b" % result)
         self._state = SmartPointer(state.get(),
                                    _raw_blake2b_lib.blake2b_destroy)
@@ -109,10 +109,9 @@ class BLAKE2b_Hash(object):
         if self._digest_done and not self._update_after_digest:
             raise TypeError("You can only call 'digest' or 'hexdigest' on this object")
 
-        result = _raw_blake2b_lib.blake2b_update(self._state.get(),
-                                                 c_uint8_ptr(data),
-                                                 c_size_t(len(data)))
-        if result:
+        if result := _raw_blake2b_lib.blake2b_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while hashing BLAKE2b data" % result)
         return self
 
@@ -126,9 +125,7 @@ class BLAKE2b_Hash(object):
         """
 
         bfr = create_string_buffer(64)
-        result = _raw_blake2b_lib.blake2b_digest(self._state.get(),
-                                                 bfr)
-        if result:
+        if result := _raw_blake2b_lib.blake2b_digest(self._state.get(), bfr):
             raise ValueError("Error %d while creating BLAKE2b digest" % result)
 
         self._digest_done = True
@@ -228,20 +225,19 @@ def new(**kwargs):
         raise TypeError("Only one digest parameter must be provided")
     if (None, None) == (digest_bytes, digest_bits):
         digest_bytes = 64
-    if digest_bytes is not None:
-        if not (1 <= digest_bytes <= 64):
-            raise ValueError("'digest_bytes' not in range 1..64")
-    else:
+    if digest_bytes is None:
         if not (8 <= digest_bits <= 512) or (digest_bits % 8):
             raise ValueError("'digest_bytes' not in range 8..512, "
                              "with steps of 8")
         digest_bytes = digest_bits // 8
 
+    elif not (1 <= digest_bytes <= 64):
+        raise ValueError("'digest_bytes' not in range 1..64")
     key = kwargs.pop("key", b"")
     if len(key) > 64:
         raise ValueError("BLAKE2s key cannot exceed 64 bytes")
 
     if kwargs:
-        raise TypeError("Unknown parameters: " + str(kwargs))
+        raise TypeError(f"Unknown parameters: {str(kwargs)}")
 
     return BLAKE2b_Hash(data, key, digest_bytes, update_after_digest)

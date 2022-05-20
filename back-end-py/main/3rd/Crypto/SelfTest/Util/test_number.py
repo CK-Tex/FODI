@@ -133,8 +133,7 @@ class MiscTests(unittest.TestCase):
 
 def get_tests(config={}):
     from Crypto.SelfTest.st_common import list_test_cases
-    tests = list_test_cases(MiscTests)
-    return tests
+    return list_test_cases(MiscTests)
 
 if __name__ == '__main__':
     suite = lambda: unittest.TestSuite(get_tests())

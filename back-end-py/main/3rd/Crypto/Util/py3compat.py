@@ -112,10 +112,7 @@ else:
     def bchr(s):
         return bytes([s])
     def bstr(s):
-        if isinstance(s,str):
-            return bytes(s,"latin-1")
-        else:
-            return bytes(s)
+        return bytes(s,"latin-1") if isinstance(s,str) else bytes(s)
     def bord(s):
         return s
     def tobytes(s, encoding="latin-1"):

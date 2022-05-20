@@ -168,7 +168,7 @@ def _save(im, fp, filename):
     try:
         rawmode, bits, colormaptype, imagetype = SAVE[im.mode]
     except KeyError:
-        raise OSError("cannot write mode %s as TGA" % im.mode)
+        raise OSError(f"cannot write mode {im.mode} as TGA")
 
     if "rle" in im.encoderinfo:
         rle = im.encoderinfo["rle"]
@@ -190,14 +190,10 @@ def _save(im, fp, filename):
     else:
         colormapfirst, colormaplength, colormapentry = 0, 0, 0
 
-    if im.mode in ("LA", "RGBA"):
-        flags = 8
-    else:
-        flags = 0
-
+    flags = 8 if im.mode in ("LA", "RGBA") else 0
     orientation = im.encoderinfo.get("orientation", im.info.get("orientation", -1))
     if orientation > 0:
-        flags = flags | 0x20
+        flags |= 0x20
 
     fp.write(
         o8(id_len)

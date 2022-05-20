@@ -26,7 +26,7 @@ import sys
 
 from Crypto import SelfTest
 
-slow_tests = not "--skip-slow-tests" in sys.argv
+slow_tests = "--skip-slow-tests" not in sys.argv
 if not slow_tests:
     print("Skipping slow tests")
 

@@ -109,7 +109,7 @@ class DdsImageFile(ImageFile.ImageFile):
             raise OSError("Unsupported header size %r" % (header_size))
         header_bytes = self.fp.read(header_size - 4)
         if len(header_bytes) != 120:
-            raise OSError("Incomplete header: %s bytes" % len(header_bytes))
+            raise OSError(f"Incomplete header: {len(header_bytes)} bytes")
         header = BytesIO(header_bytes)
 
         flags, height, width = struct.unpack("<3I", header.read(12))

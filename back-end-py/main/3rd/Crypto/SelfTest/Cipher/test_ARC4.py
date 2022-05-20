@@ -416,8 +416,7 @@ class RFC6229_Tests(unittest.TestCase):
             count = 0
             for offset in range(0,4096+1,16):
                 ct = cipher.encrypt(b('\x00')*16)
-                expected = tv[1].get(offset)
-                if expected:
+                if expected := tv[1].get(offset):
                     expected = unhexlify(b(expected.replace(" ",'')))
                     self.assertEquals(ct, expected)
                     count += 1

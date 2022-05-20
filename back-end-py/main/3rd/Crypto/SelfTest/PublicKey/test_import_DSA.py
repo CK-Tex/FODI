@@ -449,7 +449,7 @@ a1:e4:20:fa:55:a8:a7:5c:d2:f0:ea:9a:0c:2e:da:
 
         key = DSA.importKey(x509_v1_cert)
         for comp_name in ('y', 'p', 'q', 'g'):
-            comp_str = locals()[comp_name + "_str"]
+            comp_str = locals()[f"{comp_name}_str"]
             comp = int(re.sub("[^0-9a-f]", "", comp_str), 16)
             self.assertEqual(getattr(key, comp_name), comp)
         self.failIf(key.has_private())
@@ -533,7 +533,7 @@ c4:ee:bd:e3:82:e5:9a:2e:3e:b5:e8:01:b5:1d:63:
 
         key = DSA.importKey(x509_v3_cert)
         for comp_name in ('y', 'p', 'q', 'g'):
-            comp_str = locals()[comp_name + "_str"]
+            comp_str = locals()[f"{comp_name}_str"]
             comp = int(re.sub("[^0-9a-f]", "", comp_str), 16)
             self.assertEqual(getattr(key, comp_name), comp)
         self.failIf(key.has_private())

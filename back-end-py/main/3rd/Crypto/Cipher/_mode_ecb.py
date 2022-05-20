@@ -74,9 +74,9 @@ class EcbMode(object):
         """
 
         self._state = VoidPointer()
-        result = raw_ecb_lib.ECB_start_operation(block_cipher.get(),
-                                                 self._state.address_of())
-        if result:
+        if result := raw_ecb_lib.ECB_start_operation(
+            block_cipher.get(), self._state.address_of()
+        ):
             raise ValueError("Error %d while instantiating the ECB mode"
                              % result)
 
@@ -123,27 +123,25 @@ class EcbMode(object):
             ciphertext = create_string_buffer(len(plaintext))
         else:
             ciphertext = output
-            
+
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-        
+
             if len(plaintext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_ecb_lib.ECB_encrypt(self._state.get(),
-                                         c_uint8_ptr(plaintext),
-                                         c_uint8_ptr(ciphertext),
-                                         c_size_t(len(plaintext)))
-        if result:
+        if result := raw_ecb_lib.ECB_encrypt(
+            self._state.get(),
+            c_uint8_ptr(plaintext),
+            c_uint8_ptr(ciphertext),
+            c_size_t(len(plaintext)),
+        ):
             if result == 3:
                 raise ValueError("Data must be aligned to block boundary in ECB mode")
             raise ValueError("Error %d while encrypting in ECB mode" % result)
-        
-        if output is None:
-            return get_raw_buffer(ciphertext)
-        else:
-            return None
+
+        return get_raw_buffer(ciphertext) if output is None else None
 
     def decrypt(self, ciphertext, output=None):
         """Decrypt data with the key set at initialization.
@@ -181,24 +179,22 @@ class EcbMode(object):
 
             if not is_writeable_buffer(output):
                 raise TypeError("output must be a bytearray or a writeable memoryview")
-            
+
             if len(ciphertext) != len(output):
                 raise ValueError("output must have the same length as the input"
                                  "  (%d bytes)" % len(plaintext))
 
-        result = raw_ecb_lib.ECB_decrypt(self._state.get(),
-                                         c_uint8_ptr(ciphertext),
-                                         c_uint8_ptr(plaintext),
-                                         c_size_t(len(ciphertext)))
-        if result:
+        if result := raw_ecb_lib.ECB_decrypt(
+            self._state.get(),
+            c_uint8_ptr(ciphertext),
+            c_uint8_ptr(plaintext),
+            c_size_t(len(ciphertext)),
+        ):
             if result == 3:
                 raise ValueError("Data must be aligned to block boundary in ECB mode")
             raise ValueError("Error %d while decrypting in ECB mode" % result)
 
-        if output is None:
-            return get_raw_buffer(plaintext)
-        else:
-            return None
+        return get_raw_buffer(plaintext) if output is None else None
 
 
 def _create_ecb_cipher(factory, **kwargs):
@@ -214,5 +210,5 @@ def _create_ecb_cipher(factory, **kwargs):
 
     cipher_state = factory._create_base_cipher(kwargs)
     if kwargs:
-        raise TypeError("Unknown parameters for ECB: %s" % str(kwargs))
+        raise TypeError(f"Unknown parameters for ECB: {str(kwargs)}")
     return EcbMode(cipher_state)

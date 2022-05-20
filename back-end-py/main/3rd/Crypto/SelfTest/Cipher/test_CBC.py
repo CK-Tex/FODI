@@ -342,13 +342,13 @@ class NistBlockChainingVectors(unittest.TestCase):
 
             if direction == '[ENCRYPT]':
                 cts = [ tv.iv ]
-                for count in range(1000):
+                for _ in range(1000):
                     cts.append(cipher.encrypt(tv.plaintext))
                     tv.plaintext = cts[-2]
                 self.assertEqual(cts[-1], tv.ciphertext)
             elif direction == '[DECRYPT]':
                 pts = [ tv.iv]
-                for count in range(1000):
+                for _ in range(1000):
                     pts.append(cipher.decrypt(tv.ciphertext))
                     tv.ciphertext = pts[-2]
                 self.assertEqual(pts[-1], tv.plaintext)
@@ -374,10 +374,7 @@ class NistBlockChainingVectors(unittest.TestCase):
             if hasattr(tv, "keys"):
                 cipher = DES.new(tv.keys, self.des_mode, tv.iv)
             else:
-                if tv.key1 != tv.key3:
-                    key = tv.key1 + tv.key2 + tv.key3  # Option 3
-                else:
-                    key = tv.key1 + tv.key2            # Option 2
+                key = tv.key1 + tv.key2 + tv.key3 if tv.key1 != tv.key3 else tv.key1 + tv.key2
                 cipher = DES3.new(key, self.des3_mode, tv.iv)
 
             if direction == "[ENCRYPT]":

@@ -78,8 +78,7 @@ class MD4Hash(object):
 
     def __init__(self, data=None):
         state = VoidPointer()
-        result = _raw_md4_lib.md4_init(state.address_of())
-        if result:
+        if result := _raw_md4_lib.md4_init(state.address_of()):
             raise ValueError("Error %d while instantiating MD4"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -104,10 +103,9 @@ class MD4Hash(object):
             The next chunk of the message being hashed.
         """
 
-        result = _raw_md4_lib.md4_update(self._state.get(),
-                                         c_uint8_ptr(data),
-                                         c_size_t(len(data)))
-        if result:
+        if result := _raw_md4_lib.md4_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while instantiating MD4"
                              % result)
 
@@ -123,9 +121,7 @@ class MD4Hash(object):
         """
 
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_md4_lib.md4_digest(self._state.get(),
-                                         bfr)
-        if result:
+        if result := _raw_md4_lib.md4_digest(self._state.get(), bfr):
             raise ValueError("Error %d while instantiating MD4"
                              % result)
 
@@ -155,9 +151,7 @@ class MD4Hash(object):
         """
 
         clone = MD4Hash()
-        result = _raw_md4_lib.md4_copy(self._state.get(),
-                                       clone._state.get())
-        if result:
+        if result := _raw_md4_lib.md4_copy(self._state.get(), clone._state.get()):
             raise ValueError("Error %d while copying MD4" % result)
         return clone
 

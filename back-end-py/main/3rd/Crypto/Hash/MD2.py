@@ -74,8 +74,7 @@ class MD2Hash(object):
 
     def __init__(self, data=None):
         state = VoidPointer()
-        result = _raw_md2_lib.md2_init(state.address_of())
-        if result:
+        if result := _raw_md2_lib.md2_init(state.address_of()):
             raise ValueError("Error %d while instantiating MD2"
                              % result)
         self._state = SmartPointer(state.get(),
@@ -90,10 +89,9 @@ class MD2Hash(object):
             data (byte string/byte array/memoryview): The next chunk of the message being hashed.
         """
 
-        result = _raw_md2_lib.md2_update(self._state.get(),
-                                         c_uint8_ptr(data),
-                                         c_size_t(len(data)))
-        if result:
+        if result := _raw_md2_lib.md2_update(
+            self._state.get(), c_uint8_ptr(data), c_size_t(len(data))
+        ):
             raise ValueError("Error %d while instantiating MD2"
                              % result)
 
@@ -106,9 +104,7 @@ class MD2Hash(object):
         """
 
         bfr = create_string_buffer(self.digest_size)
-        result = _raw_md2_lib.md2_digest(self._state.get(),
-                                         bfr)
-        if result:
+        if result := _raw_md2_lib.md2_digest(self._state.get(), bfr):
             raise ValueError("Error %d while instantiating MD2"
                              % result)
 
@@ -136,9 +132,7 @@ class MD2Hash(object):
         """
 
         clone = MD2Hash()
-        result = _raw_md2_lib.md2_copy(self._state.get(),
-                                       clone._state.get())
-        if result:
+        if result := _raw_md2_lib.md2_copy(self._state.get(), clone._state.get()):
             raise ValueError("Error %d while copying MD2" % result)
         return clone
 

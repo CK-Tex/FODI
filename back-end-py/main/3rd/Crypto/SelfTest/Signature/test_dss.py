@@ -61,7 +61,7 @@ def t2l(hexstring):
 
 
 def load_hash_by_name(hash_name):
-    return __import__("Crypto.Hash." + hash_name, globals(), locals(), ["new"])
+    return __import__(f"Crypto.Hash.{hash_name}", globals(), locals(), ["new"])
 
 
 class StrRNG:
@@ -970,11 +970,11 @@ class TestVectorsDSAWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_verify(self, tv):
-        self._id = "Wycheproof DSA Test #" + str(tv.id)
-        
+        self._id = f"Wycheproof DSA Test #{str(tv.id)}"
+
         hashed_msg = tv.hash_module.new(tv.msg)
         signer = DSS.new(tv.key, 'fips-186-3', encoding='der')
         try:
@@ -1011,7 +1011,7 @@ class TestVectorsECDSAWycheproof(unittest.TestCase):
                 key = ECC.import_key(group['keyPem'])
             except ValueError:
                 continue
-            
+
             hash_name = group['sha']
             if hash_name == "SHA-512":
                 hash_module = SHA512
@@ -1030,7 +1030,7 @@ class TestVectorsECDSAWycheproof(unittest.TestCase):
             elif hash_name == "SHA-1":
                 hash_module = SHA1
             else:
-                raise ValueError("Unknown hash type " + hash_name)
+                raise ValueError(f"Unknown hash type {hash_name}")
 
             encoding_name = group['type']
             if encoding_name == "EcdsaVerify":
@@ -1038,7 +1038,7 @@ class TestVectorsECDSAWycheproof(unittest.TestCase):
             elif encoding_name == "EcdsaP1363Verify":
                 encoding = "binary"
             else:
-                raise ValueError("Unknown signature type " + encoding_name)
+                raise ValueError(f"Unknown signature type {encoding_name}")
 
             from collections import namedtuple
             TestVector = namedtuple('TestVector', 'id comment msg encoding sig key hash_module valid warning filename')
@@ -1096,7 +1096,7 @@ class TestVectorsECDSAWycheproof(unittest.TestCase):
     def warn(self, tv):
         if tv.warning and self._wycheproof_warnings:
             import warnings
-            warnings.warn("Wycheproof warning: %s (%s)" % (self._id, tv.comment))
+            warnings.warn(f"Wycheproof warning: {self._id} ({tv.comment})")
 
     def test_verify(self, tv):
         self._id = "Wycheproof ECDSA Test #%d (%s, %s)" % (tv.id, tv.comment, tv.filename)
